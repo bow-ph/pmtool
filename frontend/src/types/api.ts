@@ -61,6 +61,18 @@ export interface Package {
   price: number;
   button_text: string;
   features: string[];
+  interval?: string;
+  trial_days?: number;
+}
+
+export interface SubscriptionResponse {
+  id: string;
+  customerId: string;
+  status: 'active' | 'pending' | 'canceled' | 'suspended';
+  paymentUrl?: string;
+  createdAt: string;
+  startDate: string;
+  nextPaymentDate?: string;
 }
 
 // CalDAV Types
