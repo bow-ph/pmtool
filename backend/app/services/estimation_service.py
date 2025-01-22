@@ -1,12 +1,15 @@
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
+import json
 from sqlalchemy.orm import Session
 from app.models.task import Task
 from app.models.project import Project
+from app.services.openai_service import OpenAIService
 
 class EstimationService:
     def __init__(self, db: Session):
         self.db = db
+        self.openai_service = OpenAIService()
 
     def analyze_estimate_accuracy(self, task_id: int) -> Dict:
         """Analyze the accuracy of a task's time estimate"""
@@ -147,3 +150,73 @@ class EstimationService:
             )
 
         return recommendations
+
+    async def generate_proactive_hints(self, project_id: int) -> Dict:
+        """
+        Generate proactive hints about financial and time impact for a project
+        
+        Args:
+            project_id: The ID of the project to analyze
+            
+        Returns:
+            Dict containing analysis results and recommendations
+        """
+        # Get project statistics and tasks
+        project_stats = self.get_project_estimation_stats(project_id)
+        tasks = self.db.query(Task).filter(Task.project_id == project_id).all()
+        
+        # Convert tasks to dictionary format
+        task_data = [
+            {
+                "id": task.id,
+                "description": task.description,
+                "estimated_hours": task.estimated_hours,
+                "actual_hours": task.actual_hours,
+                "status": task.status,
+                "confidence_score": task.confidence_score
+            }
+            for task in tasks
+        ]
+        
+        try:
+            # Get financial impact analysis from OpenAI
+            analysis = await self.openai_service.analyze_financial_impact(
+                project_stats=project_stats,
+                tasks=task_data
+            )
+            
+            # Parse the response
+            try:
+                if isinstance(analysis, str):
+                    analysis_result = json.loads(analysis)
+                else:
+                    analysis_result = analysis
+            except json.JSONDecodeError:
+                raise ValueError("Invalid response format from OpenAI")
+                
+            # Validate time estimates if we have enough data
+            if len(tasks) > 0:
+                validation_result = await self.openai_service.validate_time_estimates(
+                    tasks=task_data,
+                    historical_data=self.detect_estimation_patterns(project_stats["project_id"])
+                )
+                if isinstance(validation_result, str):
+                    validation_data = json.loads(validation_result)
+                else:
+                    validation_data = validation_result
+                    
+                analysis_result["time_validation"] = validation_data
+            
+            return {
+                "status": "success",
+                "financial_impact": analysis_result.get("financial_impact", {}),
+                "time_impact": analysis_result.get("time_impact", {}),
+                "recommendations": analysis_result.get("recommendations", []),
+                "time_validation": analysis_result.get("time_validation", {})
+            }
+            
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Error generating proactive hints: {str(e)}"
+            }
