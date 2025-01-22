@@ -85,14 +85,27 @@ class CalDAVService:
         """Add a task as an event to the calendar"""
         collection = self.storage.discover(calendar_path)
         
-        # Create iCalendar event
+        # Create iCalendar event with enhanced fields
         event = {
             "component": "VEVENT",
             "uid": str(uuid.uuid4()),
             "summary": task_data["description"],
             "dtstart": task_data["start_date"].strftime("%Y%m%dT%H%M%SZ"),
             "dtend": task_data["end_date"].strftime("%Y%m%dT%H%M%SZ"),
-            "description": f"Estimated hours: {task_data['estimated_hours']}",
+            "description": (
+                f"Estimated hours: {task_data['estimated_hours']}\n"
+                f"Status: {task_data.get('status', 'pending')}\n"
+                f"Confidence: {task_data.get('confidence_score', 0.0):.0%}"
+            ),
+            "categories": ["PM Tool Task"],
+            "status": "NEEDS-ACTION" if task_data.get("status") == "pending"
+                     else "IN-PROCESS" if task_data.get("status") == "in_progress"
+                     else "COMPLETED",
+            "priority": "1" if task_data.get("priority") == "high"
+                      else "5" if task_data.get("priority") == "medium"
+                      else "9",
+            "x-pm-tool-id": str(task_data.get("id", "")),
+            "x-pm-tool-estimated-hours": str(task_data["estimated_hours"]),
         }
         
         collection.upload(event)

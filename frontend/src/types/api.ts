@@ -62,3 +62,19 @@ export interface Package {
   button_text: string;
   features: string[];
 }
+
+// CalDAV Types
+export interface CalDAVTask {
+  uid: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  estimated_hours: number;
+  status: 'pending' | 'in_progress' | 'completed';
+  priority?: 'high' | 'medium' | 'low';
+}
+
+export interface CalDAVResponse {
+  tasks: CalDAVTask[];
+  caldav_url: string;
+}
