@@ -7,7 +7,12 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 # Test database URL
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:postgres@localhost/test_bow_db"
+DB_USER = os.getenv("TEST_DB_USER", "postgres")
+DB_PASSWORD = os.getenv("TEST_DB_PASSWORD", "postgres")
+DB_HOST = os.getenv("TEST_DB_HOST", "localhost")
+DB_NAME = os.getenv("TEST_DB_NAME", "test_bow_db")
+
+SQLALCHEMY_DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
 
 @pytest.fixture(scope="session")
 def db_engine():
