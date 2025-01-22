@@ -20,22 +20,32 @@ class Settings(BaseSettings):
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}/{self.POSTGRES_DB}"
 
     # Security
-    SECRET_KEY: str = "your-secret-key-here"  # Change in production
+    SECRET_KEY: str = ""  # Set via environment variable SECRET_KEY
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     
-    # Email
+    # Email Configuration
     SMTP_TLS: bool = True
-    SMTP_PORT: Optional[int] = None
-    SMTP_HOST: Optional[str] = None
-    SMTP_USER: Optional[str] = None
-    SMTP_PASSWORD: Optional[str] = None
-    EMAILS_FROM_EMAIL: Optional[str] = None
-    EMAILS_FROM_NAME: Optional[str] = None
+    SMTP_PORT: int = 587  # SendGrid SMTP port
+    SMTP_HOST: str = "smtp.sendgrid.net"
+    SMTP_USER: str = "apikey"  # SendGrid uses 'apikey' as username
+    SMTP_PASSWORD: Optional[str] = None  # Set via environment variable SENDGRID_API_KEY
+    EMAILS_FROM_EMAIL: str = "noreply@bow-agentur.de"
+    EMAILS_FROM_NAME: str = "PM Tool"
+    
+    @property
+    def email_enabled(self) -> bool:
+        return bool(
+            self.SMTP_HOST
+            and self.SMTP_PORT
+            and self.SMTP_USER
+            and self.SMTP_PASSWORD
+            and self.EMAILS_FROM_EMAIL
+        )
 
     # Mollie
-    MOLLIE_TEST_API_KEY: str = "test_ENdGpCBJjm67KQCPfPWPqRjd6nBafw"
-    MOLLIE_LIVE_API_KEY: str = "live_q3v2sAKHnAAd6BeSR4uahJ3QcKWGND"
-    MOLLIE_MODE: str = "test"  # Change to "live" in production
+    MOLLIE_TEST_API_KEY: str = ""  # Set via environment variable MOLLIE_TEST_API_KEY
+    MOLLIE_LIVE_API_KEY: str = ""  # Set via environment variable MOLLIE_LIVE_API_KEY
+    MOLLIE_MODE: str = "test"  # Set via environment variable MOLLIE_MODE
 
     # CalDAV
     CALDAV_SERVER_URL: str = "https://pm.bow-agentur.de/caldav"
