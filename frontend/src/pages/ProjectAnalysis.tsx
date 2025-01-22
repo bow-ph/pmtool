@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import PDFUploader from '../components/PDFAnalysis/PDFUploader';
 import AnalysisResults from '../components/PDFAnalysis/AnalysisResults';
 import ProactiveHintsPanel from '../components/ProactiveHints/ProactiveHintsPanel';
