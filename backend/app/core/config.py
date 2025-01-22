@@ -39,6 +39,9 @@ class Settings(BaseSettings):
 
     # CalDAV
     CALDAV_SERVER_URL: str = "https://pm.bow-agentur.de/caldav"
+    CALDAV_USERNAME: Optional[str] = None  # Set via environment variable CALDAV_USERNAME
+    CALDAV_PASSWORD: Optional[str] = None  # Set via environment variable CALDAV_PASSWORD
+    CALDAV_AUTH_ENABLED: bool = True
 
     class Config:
         case_sensitive = True

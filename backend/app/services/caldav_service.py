@@ -1,17 +1,75 @@
 from radicale import Application as RadicaleApp
 from radicale.storage import load as load_storage
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import uuid
 import os
+import bcrypt
+from fastapi import HTTPException
+from app.core.config import settings
 
 class CalDAVService:
     def __init__(self):
-        # Configure Radicale storage
-        self.storage = load_storage({
-            "type": "multifilesystem",
-            "filesystem_folder": "/var/lib/radicale/collections",
-        })
+        """Initialize CalDAV service with authentication"""
+        try:
+            # Initialize authentication
+            self._init_auth()
+            
+            # Configure Radicale storage with authentication
+            config: Dict[str, Any] = {
+                "type": "multifilesystem",
+                "filesystem_folder": "/var/lib/radicale/collections",
+                "auth": {
+                    "type": None,
+                    "htpasswd_filename": None,
+                    "htpasswd_encryption": "bcrypt"
+                }
+            }
+            
+            if settings.CALDAV_AUTH_ENABLED:
+                config["auth"]["type"] = "htpasswd"
+                config["auth"]["htpasswd_filename"] = "/etc/radicale/users"
+            
+            self.storage = load_storage(config)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to initialize CalDAV service: {str(e)}"
+            )
+        
+    def _init_auth(self):
+        """Initialize authentication by creating htpasswd file"""
+        if not settings.CALDAV_AUTH_ENABLED:
+            return
+
+        try:
+            if settings.CALDAV_AUTH_ENABLED:
+                if not settings.CALDAV_USERNAME or not settings.CALDAV_PASSWORD:
+                    raise ValueError("CalDAV authentication is enabled but credentials are missing")
+
+                htpasswd_dir = os.path.dirname("/etc/radicale/users")
+                if not os.path.exists(htpasswd_dir):
+                    os.makedirs(htpasswd_dir, mode=0o755, exist_ok=True)
+
+                if not os.path.exists("/etc/radicale/users"):
+                    # Generate password hash
+                    if not isinstance(settings.CALDAV_PASSWORD, str):
+                        raise ValueError("CALDAV_PASSWORD must be a string")
+                    password = settings.CALDAV_PASSWORD.encode('utf-8')
+                    salt = bcrypt.gensalt()
+                    hashed = bcrypt.hashpw(password, salt)
+                
+                # Write to htpasswd file with secure permissions
+                with open("/etc/radicale/users", "w") as f:
+                    f.write(f"{settings.CALDAV_USERNAME}:{hashed.decode('utf-8')}\n")
+                
+                # Set secure permissions on htpasswd file
+                os.chmod("/etc/radicale/users", 0o600)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to initialize CalDAV authentication: {str(e)}"
+            )
 
     def create_calendar(self, user_id: int, calendar_name: str = "PM Tool"):
         """Create a new calendar for a user"""
