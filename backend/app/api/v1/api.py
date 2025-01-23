@@ -7,6 +7,7 @@ from app.api.v1.endpoints import (
     admin,
     invoices,
     packages,
+    scheduling,
 )
 
 api_router = APIRouter()
@@ -18,3 +19,4 @@ api_router.include_router(estimations.router, prefix="/estimations", tags=["esti
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(invoices.router, prefix="/invoices", tags=["invoices"])
 api_router.include_router(packages.router, prefix="/packages", tags=["packages"])
+api_router.include_router(scheduling.router, prefix="/scheduling", tags=["scheduling"])
