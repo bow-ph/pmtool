@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from sqlalchemy.orm import Session
+import os
 from app.models.invoice import Invoice
 from app.models.user import User
 from app.models.subscription import Subscription
@@ -11,9 +12,12 @@ import os
 class InvoiceService:
     def __init__(self, db: Session):
         self.db = db
-        self.invoice_dir = "/var/lib/pmtool/invoices"
-        if not os.path.exists(self.invoice_dir):
-            os.makedirs(self.invoice_dir, exist_ok=True)
+        # Set up invoice directory based on environment
+        if os.getenv('TESTING', 'false').lower() == 'true':
+            self.invoice_dir = "/tmp/test_invoices"
+        else:
+            self.invoice_dir = "/var/lib/pmtool/invoices"
+        os.makedirs(self.invoice_dir, exist_ok=True)
 
     def generate_invoice_number(self) -> str:
         """Generate a unique invoice number"""
@@ -38,8 +42,13 @@ class InvoiceService:
         self,
         user_id: int,
         subscription_id: int,
-        amount: float,
-        description: str
+        total_amount: float,
+        net_amount: float,
+        vat_amount: float,
+        vat_rate: float,
+        description: str,
+        currency: str = "EUR",
+        issue_date: Optional[datetime] = None
     ) -> Invoice:
         """Create a new invoice record and generate PDF"""
         # Get user and subscription details
@@ -57,8 +66,13 @@ class InvoiceService:
             invoice_number=invoice_number,
             user_id=user_id,
             subscription_id=subscription_id,
-            total_amount=amount,
-            status="pending"
+            total_amount=total_amount,
+            net_amount=net_amount,
+            vat_amount=vat_amount,
+            vat_rate=vat_rate,
+            currency=currency,
+            status="pending",
+            issue_date=issue_date or datetime.utcnow()
         )
         self.db.add(invoice)
         self.db.flush()  # Get the ID without committing
@@ -127,18 +141,37 @@ class InvoiceService:
         y = height - 400
         c.setFont("Helvetica-Bold", 12)
         c.drawString(50, y, "Beschreibung")
-        c.drawString(450, y, "Betrag")
+        c.drawString(350, y, "Nettobetrag")
+        c.drawString(450, y, "MwSt.")
+        c.drawString(500, y, "Gesamt")
         y -= 30
         
         c.setFont("Helvetica", 12)
         c.drawString(50, y, description)
-        c.drawRightString(500, y, f"€{invoice.total_amount:.2f}")
+        c.drawRightString(400, y, f"{invoice.currency} {invoice.net_amount:.2f}")
+        if invoice.vat_rate > 0:
+            c.drawRightString(475, y, f"{invoice.vat_amount:.2f}")
+            c.drawString(425, y + 15, f"({invoice.vat_rate * 100:.0f}%)")
+        else:
+            c.drawRightString(475, y, "0.00")
+            c.drawString(425, y + 15, "(0%)")
+        c.drawRightString(550, y, f"{invoice.currency} {invoice.total_amount:.2f}")
         
         # Total
         y -= 40
         c.setFont("Helvetica-Bold", 12)
+        c.drawString(350, y, "Nettobetrag:")
+        c.drawRightString(500, y, f"{invoice.currency} {invoice.net_amount:.2f}")
+        
+        if invoice.vat_rate > 0:
+            y -= 20
+            c.drawString(350, y, f"MwSt. ({invoice.vat_rate * 100:.0f}%):")
+            c.drawRightString(500, y, f"{invoice.currency} {invoice.vat_amount:.2f}")
+        
+        y -= 30
+        c.setFont("Helvetica-Bold", 14)
         c.drawString(350, y, "Gesamtbetrag:")
-        c.drawRightString(500, y, f"€{invoice.total_amount:.2f}")
+        c.drawRightString(500, y, f"{invoice.currency} {invoice.total_amount:.2f}")
         
         # Footer
         c.setFont("Helvetica", 10)

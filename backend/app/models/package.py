@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, ARRAY
+from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 class Package(Base):
@@ -15,3 +16,6 @@ class Package(Base):
     is_active = Column(Boolean, default=True)
     button_text = Column(String)
     sort_order = Column(Integer, default=0)  # For controlling display order
+
+    # Relationships
+    subscriptions = relationship("Subscription", back_populates="package")

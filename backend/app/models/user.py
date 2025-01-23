@@ -18,12 +18,13 @@ class User(Base):
     
     # Client information
     client_type = Column(String, default="private")  # private or company
-    company_name = Column(String, nullable=True)
-    vat_number = Column(String, nullable=True)
-    billing_address = Column(String, nullable=True)
-    shipping_address = Column(String, nullable=True)
-    phone_number = Column(String, nullable=True)
-    contact_person = Column(String, nullable=True)  # For company contacts
+    company_name = Column(String, nullable=True)  # Company name for business clients
+    vat_number = Column(String, nullable=True)  # VAT/Tax ID for billing
+    billing_address = Column(String, nullable=True)  # Primary billing address
+    shipping_address = Column(String, nullable=True)  # Optional different shipping address
+    phone_number = Column(String, nullable=True)  # Contact phone number
+    contact_person = Column(String, nullable=True)  # Primary contact for company clients
+    notes = Column(String, nullable=True)  # Admin notes about the client
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -31,3 +32,4 @@ class User(Base):
     # Relationships
     invoices = relationship("Invoice", back_populates="user")
     projects = relationship("Project", back_populates="user")
+    subscriptions = relationship("Subscription", back_populates="user")

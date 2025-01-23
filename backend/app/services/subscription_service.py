@@ -22,10 +22,11 @@ class SubscriptionService:
         if subscription.end_date and subscription.end_date < datetime.now():
             return False
             
-        # Get current project count
+        # Get current project count in subscription period
         project_count = self.db.query(Project).filter(
             Project.user_id == user_id,
-            Project.created_at >= subscription.start_date
+            Project.created_at >= subscription.start_date,
+            Project.created_at <= (subscription.end_date or datetime.max)
         ).count()
         
         # Check limits based on package type
@@ -34,7 +35,10 @@ class SubscriptionService:
         elif subscription.package_type == "team":
             return project_count < 10
         elif subscription.package_type == "enterprise":
-            return project_count < (subscription.project_limit or float('inf'))
+            # Use custom limit if set, otherwise unlimited
+            if subscription.project_limit is not None:
+                return project_count < subscription.project_limit
+            return True
             
         return False
     
@@ -42,7 +46,9 @@ class SubscriptionService:
         """Get subscription duration based on package type"""
         if package_type in ["trial", "team"]:
             return timedelta(days=90)  # 3 months
-        elif package_type == "enterprise" and custom_months:
-            return timedelta(days=custom_months * 30.44)  # Average month length
+        elif package_type == "enterprise":
+            # Default to 12 months for enterprise if not specified
+            months = custom_months if custom_months is not None else 12
+            return timedelta(days=int(months * 30.44))  # Average month length
         else:
-            raise ValueError("Invalid package type or missing custom duration")
+            raise ValueError("Invalid package type")
