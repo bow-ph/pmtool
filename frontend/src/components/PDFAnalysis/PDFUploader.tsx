@@ -2,10 +2,11 @@ import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient, endpoints } from '../../api/client';
+import { PdfAnalysisResponse } from '../../types/api';
 
 interface PDFUploaderProps {
   projectId: number;
-  onAnalysisComplete: (result: any) => void;
+  onAnalysisComplete: (result: PdfAnalysisResponse) => void;
 }
 
 const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete }) => {

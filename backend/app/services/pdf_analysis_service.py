@@ -12,6 +12,25 @@ class PDFAnalysisService:
     def __init__(self, db: Session):
         self.db = db
         self.openai_service = OpenAIService()
+        
+    def _clean_text(self, text: str) -> str:
+        """Remove common headers, footers, and clean up text"""
+        # Split into lines
+        lines = text.split('\n')
+        
+        # Remove empty lines and common headers/footers
+        cleaned_lines = []
+        for line in lines:
+            line = line.strip()
+            # Skip empty lines
+            if not line:
+                continue
+            # Skip common headers/footers (page numbers, dates, etc.)
+            if line.isdigit() or line.startswith('Page ') or line.startswith('Seite '):
+                continue
+            cleaned_lines.append(line)
+            
+        return ' '.join(cleaned_lines)
 
     async def extract_text_from_pdf(self, file: UploadFile) -> str:
         """Extract text content from uploaded PDF file"""
@@ -59,7 +78,12 @@ class PDFAnalysisService:
             "status": "success",
             "tasks": created_tasks,
             "total_estimated_hours": analysis_result.get("total_estimated_hours", 0),
-            "risk_factors": analysis_result.get("risk_factors", [])
+            "risk_factors": analysis_result.get("risk_factors", []),
+            "confidence_analysis": analysis_result.get("confidence_analysis", {
+                "overall_confidence": 0.0,
+                "rationale": "",
+                "improvement_suggestions": []
+            })
         }
 
     async def _create_tasks_from_analysis(self, project_id: int, analysis: Dict) -> List[Dict]:
@@ -68,18 +92,22 @@ class PDFAnalysisService:
         tasks = analysis.get("tasks", [])
         
         for task_data in tasks:
+            # Clean task description by removing common headers/footers
+            description = self._clean_text(task_data["description"])
             task = Task(
                 project_id=project_id,
-                description=task_data["description"],
+                description=description,
                 estimated_hours=task_data["estimated_hours"],
                 status="pending",
-                confidence_score=task_data.get("confidence", 0.0)
+                confidence_score=task_data.get("confidence", 0.0),
+                confidence_rationale=task_data.get("confidence_rationale", "")
             )
             self.db.add(task)
             created_tasks.append({
                 "description": task.description,
                 "estimated_hours": task.estimated_hours,
-                "confidence_score": task.confidence_score
+                "confidence_score": task.confidence_score,
+                "confidence_rationale": task.confidence_rationale
             })
         
         try:

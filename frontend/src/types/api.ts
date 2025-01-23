@@ -38,6 +38,7 @@ export interface Task {
   actual_hours?: number;
   status: 'pending' | 'in_progress' | 'completed';
   confidence_score: number;
+  confidence_rationale?: string;
 }
 
 export interface PdfAnalysisResponse {
@@ -45,6 +46,11 @@ export interface PdfAnalysisResponse {
   tasks: Task[];
   total_estimated_hours: number;
   risk_factors: string[];
+  confidence_analysis: {
+    overall_confidence: number;
+    rationale: string;
+    improvement_suggestions: string[];
+  };
 }
 
 export interface FinancialImpact {

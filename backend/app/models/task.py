@@ -13,6 +13,7 @@ class Task(Base):
     actual_hours = Column(Float, nullable=True)
     status = Column(String)  # pending, in_progress, completed
     confidence_score = Column(Float)  # AI confidence in the estimate (0-1)
+    confidence_rationale = Column(String)  # Detailed explanation of confidence score
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
