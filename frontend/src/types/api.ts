@@ -91,10 +91,13 @@ export interface Package {
   name: string;
   description: string;
   price: number;
-  button_text: string;
+  interval: string;
+  trial_days: number;
+  max_projects: number;
   features: string[];
-  interval?: string;
-  trial_days?: number;
+  button_text: string;
+  sort_order: number;
+  is_active: boolean;
 }
 
 export interface SubscriptionResponse {
