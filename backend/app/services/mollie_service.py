@@ -66,11 +66,25 @@ class MollieService:
             raise HTTPException(status_code=404, detail=str(e))
 
     async def cancel_subscription(self, customer_id: str, subscription_id: str) -> Dict:
-        """Cancel a subscription"""
+        """Cancel a subscription and send notification email"""
         try:
             subscription = self.client.customer_subscriptions.with_parent_id(
                 customer_id
             ).delete(subscription_id)
+            
+            # Send cancellation email
+            from app.services.email_service import EmailService
+            email_service = EmailService()
+            
+            # Get customer details
+            customer = self.client.customers.get(customer_id)
+            
+            # Send cancellation confirmation
+            email_service.send_subscription_cancellation(
+                customer.email,
+                subscription.get("description", "Unknown Package")
+            )
+            
             return subscription
         except MollieError as e:
             raise HTTPException(status_code=400, detail=str(e))

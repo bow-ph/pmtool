@@ -121,3 +121,20 @@ class EmailService:
         except Exception as e:
             print(f"Failed to send subscription expiry notice to {to_email}: {str(e)}")
             return False
+
+    def send_subscription_cancellation(self, to_email: str, package_name: str) -> bool:
+        """Send subscription cancellation confirmation"""
+        subject = "Bestätigung der Abonnement-Kündigung"
+        content = f"""
+        <h2>Bestätigung der Abonnement-Kündigung</h2>
+        <p>Sehr geehrter Kunde,</p>
+        <p>wir bestätigen hiermit die Kündigung Ihres Abonnements für das Paket "{package_name}".</p>
+        <p>Ihr Zugang bleibt bis zum Ende der aktuellen Abrechnungsperiode aktiv.</p>
+        <p>Wir bedauern, dass Sie uns verlassen. Falls Sie Feedback haben, wie wir unseren Service verbessern können, antworten Sie gerne auf diese E-Mail.</p>
+        <p>Mit freundlichen Grüßen<br>Ihr PM Tool Team</p>
+        """
+        try:
+            return self.send_email(to_email, subject, content)
+        except Exception as e:
+            print(f"Failed to send subscription cancellation email to {to_email}: {str(e)}")
+            return False
