@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
 from app.core.database import Base
 from datetime import datetime
 
@@ -16,3 +17,6 @@ class Subscription(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     last_payment_date = Column(DateTime, nullable=True)
     next_payment_date = Column(DateTime, nullable=True)
+
+    # Relationships
+    invoices = relationship("Invoice", back_populates="subscription")
