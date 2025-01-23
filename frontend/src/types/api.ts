@@ -17,6 +17,19 @@ export interface User {
   updated_at?: string;
 }
 
+export interface Invoice {
+  id: number;
+  invoice_number: string;
+  user_id: number;
+  subscription_id: number;
+  issue_date: string;
+  total_amount: number;
+  pdf_path: string;
+  status: 'pending' | 'paid' | 'cancelled';
+  created_at: string;
+  updated_at?: string;
+}
+
 // Project Analysis Types
 export interface Task {
   id?: number;
