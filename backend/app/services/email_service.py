@@ -47,34 +47,42 @@ class EmailService:
 
     def send_welcome_email(self, to_email: str, username: str) -> bool:
         """Send welcome email after registration"""
-        subject = "Welcome to PM Tool"
+        subject = "Willkommen bei PM Tool"
         content = f"""
-        <h2>Welcome to PM Tool!</h2>
-        <p>Dear {username},</p>
-        <p>Thank you for registering with PM Tool. We're excited to help you manage your projects more efficiently.</p>
-        <p>You can now:</p>
+        <h2>Willkommen bei PM Tool!</h2>
+        <p>Sehr geehrte(r) {username},</p>
+        <p>vielen Dank für Ihre Registrierung bei PM Tool. Wir freuen uns, Sie bei der effizienten Verwaltung Ihrer Projekte unterstützen zu dürfen.</p>
+        <p>Sie können jetzt:</p>
         <ul>
-            <li>Create and manage projects</li>
-            <li>Upload PDFs for automatic task extraction</li>
-            <li>Sync your tasks with your calendar</li>
+            <li>Projekte erstellen und verwalten</li>
+            <li>PDFs für die automatische Aufgabenextraktion hochladen</li>
+            <li>Ihre Aufgaben mit Ihrem Kalender synchronisieren</li>
         </ul>
-        <p>If you have any questions, please don't hesitate to contact us.</p>
-        <p>Best regards,<br>PM Tool Team</p>
+        <p>Bei Fragen stehen wir Ihnen gerne zur Verfügung.</p>
+        <p>Mit freundlichen Grüßen<br>Ihr PM Tool Team</p>
         """
-        return self.send_email(to_email, subject, content)
+        try:
+            return self.send_email(to_email, subject, content)
+        except Exception as e:
+            print(f"Failed to send welcome email to {to_email}: {str(e)}")
+            return False
 
     def send_password_reset_email(self, to_email: str, reset_token: str) -> bool:
         """Send password reset email"""
         reset_url = f"https://pm.bow-agentur.de/reset-password?token={reset_token}"
-        subject = "Password Reset Request"
+        subject = "PM Tool Passwort zurücksetzen"
         content = f"""
-        <h2>Password Reset Request</h2>
-        <p>You have requested to reset your password. Click the link below to proceed:</p>
-        <p><a href="{reset_url}">Reset Password</a></p>
-        <p>If you didn't request this, please ignore this email.</p>
-        <p>Best regards,<br>PM Tool Team</p>
+        <h2>Passwort zurücksetzen</h2>
+        <p>Sie haben eine Anfrage zum Zurücksetzen Ihres Passworts gestellt. Klicken Sie auf den folgenden Link, um fortzufahren:</p>
+        <p><a href="{reset_url}">Passwort zurücksetzen</a></p>
+        <p>Falls Sie keine Anfrage gestellt haben, können Sie diese E-Mail ignorieren.</p>
+        <p>Mit freundlichen Grüßen<br>Ihr PM Tool Team</p>
         """
-        return self.send_email(to_email, subject, content)
+        try:
+            return self.send_email(to_email, subject, content)
+        except Exception as e:
+            print(f"Failed to send password reset email to {to_email}: {str(e)}")
+            return False
 
     def send_payment_confirmation(
         self,
@@ -84,24 +92,32 @@ class EmailService:
         invoice_path: str
     ) -> bool:
         """Send payment confirmation with invoice"""
-        subject = f"Payment Confirmation - {package_name} Package"
+        subject = f"Zahlungsbestätigung - {package_name} Paket"
         content = f"""
-        <h2>Payment Confirmation</h2>
-        <p>Thank you for your payment of €{amount:.2f} for the {package_name} package.</p>
-        <p>Your subscription has been activated. You can find your invoice attached to this email.</p>
-        <p>Best regards,<br>PM Tool Team</p>
+        <h2>Zahlungsbestätigung</h2>
+        <p>Vielen Dank für Ihre Zahlung von €{amount:.2f} für das {package_name} Paket.</p>
+        <p>Ihr Abonnement wurde aktiviert. Die Rechnung finden Sie im Anhang dieser E-Mail.</p>
+        <p>Mit freundlichen Grüßen<br>Ihr PM Tool Team</p>
         """
-        attachments = [(invoice_path, "invoice.pdf")]
-        return self.send_email(to_email, subject, content, attachments)
+        try:
+            attachments = [(invoice_path, f"rechnung_{package_name.lower()}.pdf")]
+            return self.send_email(to_email, subject, content, attachments)
+        except Exception as e:
+            print(f"Failed to send payment confirmation to {to_email}: {str(e)}")
+            return False
 
     def send_subscription_expiry_notice(self, to_email: str, days_left: int) -> bool:
         """Send subscription expiry notice"""
-        subject = "Subscription Expiry Notice"
+        subject = "Ablauf des Abonnements"
         content = f"""
-        <h2>Subscription Expiry Notice</h2>
-        <p>Your PM Tool subscription will expire in {days_left} days.</p>
-        <p>To ensure uninterrupted service, please renew your subscription.</p>
-        <p><a href="https://pm.bow-agentur.de/subscription">Renew Subscription</a></p>
-        <p>Best regards,<br>PM Tool Team</p>
+        <h2>Hinweis zum Ablauf des Abonnements</h2>
+        <p>Ihr PM Tool Abonnement läuft in {days_left} Tagen ab.</p>
+        <p>Um eine unterbrechungsfreie Nutzung zu gewährleisten, erneuern Sie bitte Ihr Abonnement.</p>
+        <p><a href="https://pm.bow-agentur.de/subscription">Abonnement verlängern</a></p>
+        <p>Mit freundlichen Grüßen<br>Ihr PM Tool Team</p>
         """
-        return self.send_email(to_email, subject, content)
+        try:
+            return self.send_email(to_email, subject, content)
+        except Exception as e:
+            print(f"Failed to send subscription expiry notice to {to_email}: {str(e)}")
+            return False
