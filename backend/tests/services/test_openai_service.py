@@ -192,7 +192,11 @@ async def test_validate_time_estimates(openai_service):
 @pytest.mark.asyncio
 async def test_openai_rate_limit_error(openai_service):
     # Mock rate limit error
-    error = RateLimitError("Rate limit exceeded")
+    error = RateLimitError(
+        message="Rate limit exceeded",
+        response=MagicMock(status_code=429),
+        body={"error": {"message": "Rate limit exceeded"}}
+    )
     
     # Set up the mock to raise the error
     openai_service.client.chat.completions.create = AsyncMock(side_effect=error)
@@ -206,7 +210,11 @@ async def test_openai_rate_limit_error(openai_service):
 @pytest.mark.asyncio
 async def test_openai_api_error(openai_service):
     # Mock internal server error
-    error = APIError("Internal server error")
+    error = APIError(
+        message="Internal server error",
+        request=MagicMock(method="POST", url="https://api.openai.com/v1/chat/completions"),
+        body={"error": {"message": "Internal server error", "type": "internal_server_error"}}
+    )
     
     # Set up the mock to raise the error
     openai_service.client.chat.completions.create = AsyncMock(side_effect=error)

@@ -34,10 +34,19 @@ class PDFAnalysisService:
 
     async def extract_text_from_pdf(self, file: UploadFile) -> str:
         """Extract text content from uploaded PDF file"""
+        # Validate file type
+        if not file.filename.lower().endswith('.pdf'):
+            raise HTTPException(status_code=400, detail="Invalid file type. Only PDF files are supported.")
+            
         try:
             # Create a temporary file to store the uploaded PDF
             with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
                 content = await file.read()
+                
+                # Additional PDF header validation
+                if not content.startswith(b'%PDF-'):
+                    raise HTTPException(status_code=400, detail="Invalid file type. File content is not a valid PDF.")
+                    
                 tmp_file.write(content)
                 tmp_file.flush()
                 
@@ -52,6 +61,8 @@ class PDFAnalysisService:
                 # Clean up temporary file
                 os.unlink(tmp_file.name)
                 return pdf_text
+        except HTTPException:
+            raise
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Error processing PDF: {str(e)}")
 

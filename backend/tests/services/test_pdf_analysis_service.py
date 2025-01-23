@@ -20,7 +20,7 @@ def pdf_service(db_session):
 
 @pytest.fixture
 def mock_pdf_file():
-    content = b"Test PDF content"
+    content = b"%PDF-1.4\nTest PDF content"
     return UploadFile(filename="test.pdf", file=io.BytesIO(content))
 
 @pytest.mark.asyncio
@@ -75,8 +75,9 @@ async def test_invalid_file_type(pdf_service):
 
 @pytest.mark.asyncio
 async def test_pdf_extraction_error(pdf_service, mock_pdf_file):
-    with patch('pdfplumber.open', side_effect=Exception("PDF error")):
+    with patch('pdfplumber.open') as mock_plumber:
+        mock_plumber.side_effect = Exception("PDF error")
         with pytest.raises(HTTPException) as exc_info:
             await pdf_service.extract_text_from_pdf(mock_pdf_file)
         assert exc_info.value.status_code == 400
-        assert "PDF error" in str(exc_info.value.detail)
+        assert "Error processing PDF: PDF error" in str(exc_info.value.detail)
