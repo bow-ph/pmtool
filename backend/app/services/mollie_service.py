@@ -2,11 +2,13 @@ from typing import Dict, Optional
 from mollie.api.client import Client
 from mollie.api.error import Error as MollieError
 from fastapi import HTTPException
+from sqlalchemy.orm import Session
 from app.core.config import settings
 
 class MollieService:
-    def __init__(self):
+    def __init__(self, db: Session):
         """Initialize Mollie client with API key based on mode"""
+        self.db = db
         self.client = Client()
         self.client.set_api_key(
             settings.MOLLIE_LIVE_API_KEY if settings.MOLLIE_MODE == "live"
@@ -102,26 +104,42 @@ class MollieService:
             }
             
             if payment.is_paid():
-                # Send payment confirmation email
+                # Create invoice
+                from app.services.invoice_service import InvoiceService
                 from app.services.email_service import EmailService
+                
+                invoice_service = InvoiceService(self.db)
                 email_service = EmailService()
                 
                 # Get package details from metadata
                 package_name = payment.metadata.get("package_name", "Unknown Package")
                 amount = float(payment.amount["value"])
                 
-                # Generate invoice (TODO: Implement invoice generation)
-                invoice_path = "/tmp/invoice.pdf"  # Placeholder
-                
-                # Send confirmation email
-                email_service.send_payment_confirmation(
-                    payment.metadata.get("email"),
-                    package_name,
-                    amount,
-                    invoice_path
-                )
-                
-                result["status"] = "paid"
+                try:
+                    # Create invoice
+                    invoice = invoice_service.create_invoice(
+                        user_id=payment.metadata.get("user_id"),
+                        subscription_id=payment.subscription_id,
+                        amount=amount,
+                        description=f"Subscription payment for {package_name}"
+                    )
+                    
+                    # Send confirmation email with invoice
+                    email_service.send_payment_confirmation(
+                        payment.metadata.get("email"),
+                        package_name,
+                        amount,
+                        invoice.pdf_path
+                    )
+                    
+                    result.update({
+                        "status": "paid",
+                        "invoice_number": invoice.invoice_number,
+                        "invoice_path": invoice.pdf_path
+                    })
+                except Exception as e:
+                    print(f"Error generating invoice: {str(e)}")
+                    result["status"] = "paid_no_invoice"
             elif payment.is_failed():
                 result["status"] = "failed"
             

@@ -3,6 +3,7 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 from app.core.config import settings
 import base64
+import os
 from pathlib import Path
 
 class EmailService:
@@ -97,9 +98,14 @@ class EmailService:
         <h2>Zahlungsbestätigung</h2>
         <p>Vielen Dank für Ihre Zahlung von €{amount:.2f} für das {package_name} Paket.</p>
         <p>Ihr Abonnement wurde aktiviert. Die Rechnung finden Sie im Anhang dieser E-Mail.</p>
+        <p>Sie können Ihre Rechnungen auch jederzeit in Ihrem Kundenkonto unter <a href="https://pm.bow-agentur.de/account">https://pm.bow-agentur.de/account</a> einsehen.</p>
         <p>Mit freundlichen Grüßen<br>Ihr PM Tool Team</p>
         """
         try:
+            if not invoice_path or not os.path.exists(invoice_path):
+                print(f"Invoice file not found at {invoice_path}")
+                return self.send_email(to_email, subject, content)
+                
             attachments = [(invoice_path, f"rechnung_{package_name.lower()}.pdf")]
             return self.send_email(to_email, subject, content, attachments)
         except Exception as e:
