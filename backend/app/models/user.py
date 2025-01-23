@@ -14,5 +14,15 @@ class User(Base):
     two_factor_secret = Column(String, nullable=True)
     subscription_type = Column(String, nullable=True)  # trial, team, enterprise
     subscription_end_date = Column(DateTime, nullable=True)
+    
+    # Client information
+    client_type = Column(String, default="private")  # private or company
+    company_name = Column(String, nullable=True)
+    vat_number = Column(String, nullable=True)
+    billing_address = Column(String, nullable=True)
+    shipping_address = Column(String, nullable=True)
+    phone_number = Column(String, nullable=True)
+    contact_person = Column(String, nullable=True)  # For company contacts
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

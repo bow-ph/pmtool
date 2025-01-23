@@ -34,12 +34,27 @@ const MainLayout = () => {
                 >
                   Pakete
                 </Link>
-                <Link
-                  to="/admin/packages"
-                  className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                >
-                  Admin
-                </Link>
+                <div className="relative group">
+                  <button className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                    Admin
+                  </button>
+                  <div className="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 hidden group-hover:block">
+                    <div className="py-1">
+                      <Link
+                        to="/admin/packages"
+                        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        Pakete verwalten
+                      </Link>
+                      <Link
+                        to="/admin/clients"
+                        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        Kunden verwalten
+                      </Link>
+                    </div>
+                  </div>
+                </div>
                 <Link
                   to="/account"
                   className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"

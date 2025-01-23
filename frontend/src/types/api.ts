@@ -1,3 +1,22 @@
+// User Types
+export interface User {
+  id: number;
+  email: string;
+  is_active: boolean;
+  is_superuser: boolean;
+  subscription_type?: string;
+  subscription_end_date?: string;
+  client_type: 'private' | 'company';
+  company_name?: string;
+  vat_number?: string;
+  billing_address?: string;
+  shipping_address?: string;
+  phone_number?: string;
+  contact_person?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
 // Project Analysis Types
 export interface Task {
   id?: number;

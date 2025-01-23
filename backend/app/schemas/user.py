@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, constr
 from typing import Optional
 from datetime import datetime
 
@@ -9,6 +9,15 @@ class UserBase(BaseModel):
     two_factor_enabled: Optional[bool] = False
     subscription_type: Optional[str] = None
     subscription_end_date: Optional[datetime] = None
+    
+    # Client information
+    client_type: Optional[str] = "private"
+    company_name: Optional[str] = None
+    vat_number: Optional[str] = None
+    billing_address: Optional[str] = None
+    shipping_address: Optional[str] = None
+    phone_number: Optional[str] = None
+    contact_person: Optional[str] = None
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -21,6 +30,15 @@ class UserUpdate(BaseModel):
     two_factor_enabled: Optional[bool] = None
     subscription_type: Optional[str] = None
     subscription_end_date: Optional[datetime] = None
+    
+    # Client information
+    client_type: Optional[str] = None
+    company_name: Optional[str] = None
+    vat_number: Optional[str] = None
+    billing_address: Optional[str] = None
+    shipping_address: Optional[str] = None
+    phone_number: Optional[str] = None
+    contact_person: Optional[str] = None
 
 class UserInDBBase(UserBase):
     id: int
