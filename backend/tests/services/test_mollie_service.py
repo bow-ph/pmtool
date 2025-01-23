@@ -5,12 +5,12 @@ from mollie.api.error import Error as MollieError
 from fastapi import HTTPException
 
 @pytest.fixture
-def mollie_service():
+def mollie_service(db_session):
     with patch.dict('os.environ', {
         'MOLLIE_TEST_API_KEY': 'test_key',
         'MOLLIE_MODE': 'test'
     }):
-        return MollieService()
+        return MollieService(db_session)
 
 @pytest.mark.asyncio
 async def test_create_subscription(mollie_service):
@@ -27,8 +27,10 @@ async def test_create_subscription(mollie_service):
         "webhookUrl": "https://example.com/webhook"
     }
     
-    with patch.object(mollie_service.client.customer_subscriptions, 'create') as mock_create:
-        mock_create.return_value = mock_response
+    with patch.object(mollie_service.client.customers.subscriptions, 'with_parent_id') as mock_with_parent:
+        mock_create = MagicMock()
+        mock_create.create.return_value = mock_response
+        mock_with_parent.return_value = mock_create
         
         result = await mollie_service.create_subscription(
             "cust_test",
@@ -41,6 +43,7 @@ async def test_create_subscription(mollie_service):
         assert result["id"] == "sub_test"
         assert result["status"] == "active"
         assert result["interval"] == "3 months"
+        mock_with_parent.assert_called_once_with("cust_test")
 
 @pytest.mark.asyncio
 async def test_create_customer(mollie_service):
@@ -114,11 +117,15 @@ async def test_cancel_subscription(mollie_service):
         "customerId": "cust_test"
     }
     
-    with patch.object(mollie_service.client.customer_subscriptions, 'delete') as mock_delete:
-        mock_delete.return_value = mock_response
+    with patch.object(mollie_service.client.customers.subscriptions, 'with_parent_id') as mock_with_parent:
+        mock_delete = MagicMock()
+        mock_delete.delete.return_value = mock_response
+        mock_with_parent.return_value = mock_delete
         
         result = await mollie_service.cancel_subscription("cust_test", "sub_test")
         assert result["status"] == "canceled"
+        mock_with_parent.assert_called_once_with("cust_test")
+        mock_delete.delete.assert_called_once_with("sub_test")
 
 @pytest.mark.asyncio
 async def test_mollie_error_handling(mollie_service):
@@ -141,9 +148,13 @@ async def test_list_subscriptions(mollie_service):
         }]
     }
     
-    with patch.object(mollie_service.client.customer_subscriptions, 'list') as mock_list:
-        mock_list.return_value = mock_response
+    with patch.object(mollie_service.client.customers.subscriptions, 'with_parent_id') as mock_with_parent:
+        mock_list = MagicMock()
+        mock_list.list.return_value = mock_response
+        mock_with_parent.return_value = mock_list
         
         result = await mollie_service.list_subscriptions("cust_test")
         assert result["count"] == 1
         assert result["subscriptions"][0]["status"] == "active"
+        mock_with_parent.assert_called_once_with("cust_test")
+        mock_list.list.assert_called_once()

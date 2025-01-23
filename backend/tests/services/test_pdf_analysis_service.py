@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from fastapi import UploadFile, HTTPException
 from app.services.pdf_analysis_service import PDFAnalysisService
 import io
@@ -11,7 +11,12 @@ def db_session():
 
 @pytest.fixture
 def pdf_service(db_session):
-    return PDFAnalysisService(db_session)
+    with patch('app.services.openai_service.OpenAI') as mock_openai:
+        mock_client = MagicMock()
+        mock_client.chat.completions.create = AsyncMock()
+        mock_openai.return_value = mock_client
+        service = PDFAnalysisService(db_session)
+        return service
 
 @pytest.fixture
 def mock_pdf_file():
@@ -62,10 +67,11 @@ async def test_analyze_pdf(pdf_service, mock_pdf_file, db_session):
 
 @pytest.mark.asyncio
 async def test_invalid_file_type(pdf_service):
-    invalid_file = UploadFile(filename="test.txt")
+    invalid_file = UploadFile(filename="test.txt", file=io.BytesIO(b""))
     with pytest.raises(HTTPException) as exc_info:
         await pdf_service.extract_text_from_pdf(invalid_file)
     assert exc_info.value.status_code == 400
+    assert "Invalid file type" in str(exc_info.value.detail)
 
 @pytest.mark.asyncio
 async def test_pdf_extraction_error(pdf_service, mock_pdf_file):

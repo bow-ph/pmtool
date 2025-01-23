@@ -1,6 +1,9 @@
 from typing import List, Optional
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
+from sendgrid.helpers.mail import (
+    Mail, Attachment, FileContent, FileName, FileType, 
+    Disposition, Personalization, To, From
+)
 from app.core.config import settings
 import base64
 import os
@@ -11,48 +14,83 @@ class EmailService:
         self.client = SendGridAPIClient(settings.SMTP_PASSWORD)
         self.from_email = settings.EMAILS_FROM_EMAIL
         self.from_name = settings.EMAILS_FROM_NAME
+        self.default_personalization = Personalization()
 
     def send_email(
         self,
         to_email: str,
         subject: str,
         html_content: str,
-        attachments: Optional[List[tuple]] = None
+        attachments: Optional[List[tuple]] = None,
+        email_type: str = "email"
     ) -> bool:
         """Send email using SendGrid"""
-        message = Mail(
-            from_email=(self.from_email, self.from_name),
-            to_emails=to_email,
-            subject=subject,
-            html_content=html_content
-        )
-
-        if attachments:
-            for attachment_path, filename in attachments:
-                with open(attachment_path, 'rb') as f:
-                    file_content = base64.b64encode(f.read()).decode()
-                    attached_file = Attachment(
-                        FileContent(file_content),
-                        FileName(filename),
-                        FileType('application/pdf'),
-                        Disposition('attachment')
-                    )
-                    message.attachment = attached_file
-
         try:
+            # Create base message
+            message = Mail()
+            
+            # Set from email
+            message.from_email = From(email=self.from_email, name=self.from_name)
+            
+            # Add personalization
+            personalization = Personalization()
+            personalization.add_to(To(email=to_email))
+            message.add_personalization(personalization)
+            
+            # Set content
+            message.subject = subject
+            message.content = [{
+                "type": "text/html",
+                "value": html_content
+            }]
+
+            # Create message with proper structure using helper classes
+            message = Mail()
+            message.from_email = From(email=self.from_email, name=self.from_name)
+            personalization = Personalization()
+            personalization.add_to(To(email=to_email))
+            message.add_personalization(personalization)
+            message.subject = subject
+            message.content = [{
+                "type": "text/html",
+                "value": html_content
+            }]
+
+            # Handle attachments
+            if attachments:
+                for attachment_path, filename in attachments:
+                    if not os.path.exists(attachment_path):
+                        print(f"Warning: Attachment file not found: {attachment_path}")
+                        continue
+
+                    try:
+                        with open(attachment_path, 'rb') as f:
+                            file_content = base64.b64encode(f.read()).decode()
+                            attachment = Attachment()
+                            attachment.file_content = FileContent(file_content)
+                            attachment.file_name = FileName(filename)
+                            attachment.file_type = FileType('application/pdf')
+                            attachment.disposition = Disposition('attachment')
+                            message.add_attachment(attachment)
+                    except Exception as e:
+                        print(f"Failed to attach file {filename}: {str(e)}")
+                        continue
+
+            # Send email
             self.client.send(message)
             return True
         except Exception as e:
-            print(f"Failed to send email: {str(e)}")
+            error_msg = f"Failed to send {subject.lower()} email to {to_email}: {str(e)}"
+            print(error_msg)
             return False
 
     def send_welcome_email(self, to_email: str, username: str) -> bool:
         """Send welcome email after registration"""
-        subject = "Willkommen bei PM Tool"
+        subject = "Willkommen bei DocuPlanAI"
         content = f"""
-        <h2>Willkommen bei PM Tool!</h2>
+        <h2>Willkommen bei DocuPlanAI!</h2>
         <p>Sehr geehrte(r) {username},</p>
-        <p>vielen Dank für Ihre Registrierung bei PM Tool. Wir freuen uns, Sie bei der effizienten Verwaltung Ihrer Projekte unterstützen zu dürfen.</p>
+        <p>vielen Dank für Ihre Registrierung bei DocuPlanAI. Wir freuen uns, Sie bei der effizienten Verwaltung Ihrer Projekte unterstützen zu dürfen.</p>
         <p>Sie können jetzt:</p>
         <ul>
             <li>Projekte erstellen und verwalten</li>
@@ -60,7 +98,7 @@ class EmailService:
             <li>Ihre Aufgaben mit Ihrem Kalender synchronisieren</li>
         </ul>
         <p>Bei Fragen stehen wir Ihnen gerne zur Verfügung.</p>
-        <p>Mit freundlichen Grüßen<br>Ihr PM Tool Team</p>
+        <p>Mit freundlichen Grüßen<br>Ihr DocuPlanAI Team</p>
         """
         try:
             return self.send_email(to_email, subject, content)
@@ -70,14 +108,14 @@ class EmailService:
 
     def send_password_reset_email(self, to_email: str, reset_token: str) -> bool:
         """Send password reset email"""
-        reset_url = f"https://pm.bow-agentur.de/reset-password?token={reset_token}"
-        subject = "PM Tool Passwort zurücksetzen"
+        reset_url = f"https://docuplanai.com/reset-password?token={reset_token}"
+        subject = "DocuPlanAI Passwort zurücksetzen"
         content = f"""
         <h2>Passwort zurücksetzen</h2>
         <p>Sie haben eine Anfrage zum Zurücksetzen Ihres Passworts gestellt. Klicken Sie auf den folgenden Link, um fortzufahren:</p>
         <p><a href="{reset_url}">Passwort zurücksetzen</a></p>
         <p>Falls Sie keine Anfrage gestellt haben, können Sie diese E-Mail ignorieren.</p>
-        <p>Mit freundlichen Grüßen<br>Ihr PM Tool Team</p>
+        <p>Mit freundlichen Grüßen<br>Ihr DocuPlanAI Team</p>
         """
         try:
             return self.send_email(to_email, subject, content)
@@ -98,8 +136,8 @@ class EmailService:
         <h2>Zahlungsbestätigung</h2>
         <p>Vielen Dank für Ihre Zahlung von €{amount:.2f} für das {package_name} Paket.</p>
         <p>Ihr Abonnement wurde aktiviert. Die Rechnung finden Sie im Anhang dieser E-Mail.</p>
-        <p>Sie können Ihre Rechnungen auch jederzeit in Ihrem Kundenkonto unter <a href="https://pm.bow-agentur.de/account">https://pm.bow-agentur.de/account</a> einsehen.</p>
-        <p>Mit freundlichen Grüßen<br>Ihr PM Tool Team</p>
+        <p>Sie können Ihre Rechnungen auch jederzeit in Ihrem Kundenkonto unter <a href="https://docuplanai.com/account">https://docuplanai.com/account</a> einsehen.</p>
+        <p>Mit freundlichen Grüßen<br>Ihr DocuPlanAI Team</p>
         """
         try:
             if not invoice_path or not os.path.exists(invoice_path):
@@ -117,10 +155,10 @@ class EmailService:
         subject = "Ablauf des Abonnements"
         content = f"""
         <h2>Hinweis zum Ablauf des Abonnements</h2>
-        <p>Ihr PM Tool Abonnement läuft in {days_left} Tagen ab.</p>
+        <p>Ihr DocuPlanAI Abonnement läuft in {days_left} Tagen ab.</p>
         <p>Um eine unterbrechungsfreie Nutzung zu gewährleisten, erneuern Sie bitte Ihr Abonnement.</p>
-        <p><a href="https://pm.bow-agentur.de/subscription">Abonnement verlängern</a></p>
-        <p>Mit freundlichen Grüßen<br>Ihr PM Tool Team</p>
+        <p><a href="https://docuplanai.com/subscription">Abonnement verlängern</a></p>
+        <p>Mit freundlichen Grüßen<br>Ihr DocuPlanAI Team</p>
         """
         try:
             return self.send_email(to_email, subject, content)
@@ -137,7 +175,7 @@ class EmailService:
         <p>wir bestätigen hiermit die Kündigung Ihres Abonnements für das Paket "{package_name}".</p>
         <p>Ihr Zugang bleibt bis zum Ende der aktuellen Abrechnungsperiode aktiv.</p>
         <p>Wir bedauern, dass Sie uns verlassen. Falls Sie Feedback haben, wie wir unseren Service verbessern können, antworten Sie gerne auf diese E-Mail.</p>
-        <p>Mit freundlichen Grüßen<br>Ihr PM Tool Team</p>
+        <p>Mit freundlichen Grüßen<br>Ihr DocuPlanAI Team</p>
         """
         try:
             return self.send_email(to_email, subject, content)

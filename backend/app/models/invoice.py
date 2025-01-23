@@ -11,7 +11,14 @@ class Invoice(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     subscription_id = Column(Integer, ForeignKey("subscriptions.id"))
     issue_date = Column(DateTime, default=datetime.utcnow)
-    total_amount = Column(Float)
+    
+    # Financial information
+    total_amount = Column(Float)  # Total amount including VAT
+    net_amount = Column(Float)    # Amount without VAT
+    vat_amount = Column(Float)    # VAT amount
+    vat_rate = Column(Float)      # VAT rate used (e.g., 0.19 for 19%)
+    currency = Column(String, default="EUR")
+    
     pdf_path = Column(String)  # Path to stored PDF invoice
     status = Column(String, default="pending")  # pending, paid, cancelled
     created_at = Column(DateTime, default=datetime.utcnow)

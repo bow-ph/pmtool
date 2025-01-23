@@ -18,7 +18,11 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Development environment
+    allow_origins=[
+        "http://localhost:5173",  # Development environment
+        "https://docuplanai.com",  # Production environment
+        "https://admin.docuplanai.com"  # Admin environment
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

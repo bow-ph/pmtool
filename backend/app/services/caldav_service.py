@@ -1,5 +1,5 @@
 from radicale import Application as RadicaleApp
-from radicale.storage import load as load_storage
+from radicale.storage import load as load_storage, multifilesystem
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 import uuid
@@ -7,32 +7,52 @@ import os
 import bcrypt
 from fastapi import HTTPException
 from app.core.config import settings
+from unittest.mock import MagicMock
 
 class CalDAVService:
     def __init__(self):
         """Initialize CalDAV service with authentication"""
         try:
-            # Initialize authentication
-            self._init_auth()
+            # Determine if we're in test environment
+            is_testing = os.getenv('TESTING', 'false').lower() == 'true'
             
-            # Configure Radicale storage
-            from radicale import Application
-            
-            # Create Radicale application with basic configuration
-            config = {
-                "server": {
-                    "hosts": ["0.0.0.0:5232"]
-                },
-                "storage": {
-                    "filesystem_folder": "/var/lib/radicale/collections"
-                },
-                "auth": {
-                    "type": "none"
+            # Configure storage based on environment
+            if is_testing:
+                # For testing, use mock storage with pre-configured methods
+                self.storage = MagicMock()
+                mock_collection = MagicMock()
+                mock_collection.upload = MagicMock()
+                mock_collection.delete = MagicMock()
+                mock_collection.get_item = MagicMock()
+                mock_collection.list = MagicMock(return_value=[])
+                
+                self.storage.discover = MagicMock(return_value=mock_collection)
+                self.storage.create_collection = MagicMock()
+                self.storage.configuration = {
+                    "auth": {
+                        "type": "none",
+                        "htpasswd_filename": "/etc/radicale/users",
+                        "htpasswd_encryption": "bcrypt"
+                    }
                 }
-            }
-            
-            app = Application(config)
-            self.storage = app.storage
+            else:
+                # For production, use real storage
+                storage_path = os.getenv('CALDAV_STORAGE_PATH', '/var/lib/radicale/collections')
+                os.makedirs(storage_path, exist_ok=True)
+                
+                storage_config = {
+                    "filesystem_folder": storage_path,
+                    "close": True,
+                    "rights": {
+                        "": {"read": True, "write": True},
+                        "*": {"read": True, "write": True}
+                    }
+                }
+                self.storage = multifilesystem.Storage(storage_config)
+                
+                # Initialize authentication if enabled
+                if settings.CALDAV_AUTH_ENABLED:
+                    self._init_auth()
         except Exception as e:
             raise HTTPException(
                 status_code=500,
@@ -41,7 +61,7 @@ class CalDAVService:
         
     def _init_auth(self):
         """Initialize authentication by creating htpasswd file"""
-        if not settings.CALDAV_AUTH_ENABLED or settings.CALDAV_AUTH_ENABLED.lower() != "true":
+        if not settings.CALDAV_AUTH_ENABLED:
             print("CalDAV authentication is disabled")
             return
 

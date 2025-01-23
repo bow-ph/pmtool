@@ -8,7 +8,7 @@ from app.schemas.package import PackageCreate, PackageUpdate
 from app.core.auth import get_current_user
 from app.models.user import User
 
-router = APIRouter(prefix="/packages", tags=["packages"])
+router = APIRouter(tags=["packages"])
 
 @router.get("/", response_model=List[PackageSchema])
 async def list_packages(

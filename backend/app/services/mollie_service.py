@@ -4,6 +4,7 @@ from mollie.api.error import Error as MollieError
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.core.config import settings
+from app.models.user import User
 
 class MollieService:
     def __init__(self, db: Session):
@@ -25,7 +26,7 @@ class MollieService:
     ) -> Dict:
         """Create a subscription for a customer"""
         try:
-            subscription = self.client.customer_subscriptions.with_parent_id(
+            subscription = self.client.customers.subscriptions.with_parent_id(
                 customer_id
             ).create({
                 "amount": {
@@ -70,7 +71,7 @@ class MollieService:
     async def cancel_subscription(self, customer_id: str, subscription_id: str) -> Dict:
         """Cancel a subscription and send notification email"""
         try:
-            subscription = self.client.customer_subscriptions.with_parent_id(
+            subscription = self.client.customers.subscriptions.with_parent_id(
                 customer_id
             ).delete(subscription_id)
             
@@ -116,12 +117,29 @@ class MollieService:
                 amount = float(payment.amount["value"])
                 
                 try:
-                    # Create invoice
+                    # Get user for VAT calculation
+                    user = self.db.query(User).filter(
+                        User.id == payment.metadata.get("user_id")
+                    ).first()
+                    
+                    if not user:
+                        raise ValueError("User not found")
+                    
+                    # Calculate VAT (19% for German clients)
+                    vat_rate = 0.19 if user.vat_number and user.vat_number.startswith("DE") else 0.0
+                    net_amount = amount / (1 + vat_rate) if vat_rate > 0 else amount
+                    vat_amount = amount - net_amount if vat_rate > 0 else 0.0
+                    
+                    # Create invoice with VAT information
                     invoice = invoice_service.create_invoice(
-                        user_id=payment.metadata.get("user_id"),
+                        user_id=user.id,
                         subscription_id=payment.subscription_id,
-                        amount=amount,
-                        description=f"Subscription payment for {package_name}"
+                        total_amount=amount,
+                        net_amount=net_amount,
+                        vat_amount=vat_amount,
+                        vat_rate=vat_rate,
+                        description=f"Subscription payment for {package_name}",
+                        currency="EUR"
                     )
                     
                     # Send confirmation email with invoice
@@ -151,7 +169,7 @@ class MollieService:
     async def list_subscriptions(self, customer_id: str) -> Dict:
         """List all subscriptions for a customer"""
         try:
-            subscriptions = self.client.customer_subscriptions.with_parent_id(
+            subscriptions = self.client.customers.subscriptions.with_parent_id(
                 customer_id
             ).list()
             return subscriptions
