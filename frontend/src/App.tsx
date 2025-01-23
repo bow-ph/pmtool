@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import ProjectAnalysis from './pages/ProjectAnalysis'
 import PackageSelection from './pages/PackageSelection'
 import PackageAdmin from './pages/admin/PackageAdmin'
+import AccountSettings from './pages/AccountSettings'
 import { Toast } from './components/ui/toast'
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
               <Route path="analysis" element={<ProjectAnalysis />} />
               <Route path="packages" element={<PackageSelection />} />
               <Route path="admin/packages" element={<PackageAdmin />} />
+              <Route path="account" element={<AccountSettings />} />
             </Route>
           </Routes>
           <Toast />
