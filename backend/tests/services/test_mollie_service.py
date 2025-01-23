@@ -5,12 +5,16 @@ from mollie.api.error import Error as MollieError
 from fastapi import HTTPException
 
 @pytest.fixture
-def mollie_service():
+def db_session():
+    return MagicMock()
+
+@pytest.fixture
+def mollie_service(db_session):
     with patch.dict('os.environ', {
-        'MOLLIE_TEST_API_KEY': 'test_key',
+        'MOLLIE_TEST_API_KEY': 'dummy_key_for_testing',
         'MOLLIE_MODE': 'test'
     }):
-        return MollieService()
+        return MollieService(db_session)
 
 @pytest.mark.asyncio
 async def test_create_subscription(mollie_service):

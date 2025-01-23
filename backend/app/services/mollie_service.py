@@ -104,42 +104,67 @@ class MollieService:
             }
             
             if payment.is_paid():
-                # Create invoice
-                from app.services.invoice_service import InvoiceService
                 from app.services.email_service import EmailService
+                from app.services.pdf_service import generate_invoice_pdf
+                from app.models.invoice import Invoice
+                import datetime
                 
-                invoice_service = InvoiceService(self.db)
                 email_service = EmailService()
                 
                 # Get package details from metadata
                 package_name = payment.metadata.get("package_name", "Unknown Package")
                 amount = float(payment.amount["value"])
+                user_id = payment.metadata.get("user_id")
                 
                 try:
-                    # Create invoice
-                    invoice = invoice_service.create_invoice(
-                        user_id=payment.metadata.get("user_id"),
+                    # Generate unique invoice number (YYYY-MM-{5-digit-sequence})
+                    today = datetime.datetime.now()
+                    invoice_count = self.db.query(Invoice).filter(
+                        Invoice.created_at >= today.replace(day=1, hour=0, minute=0, second=0)
+                    ).count()
+                    invoice_number = f"{today.year}-{today.month:02d}-{(invoice_count + 1):05d}"
+                    
+                    # Create invoice record
+                    invoice = Invoice(
+                        invoice_number=invoice_number,
+                        user_id=user_id,
                         subscription_id=payment.subscription_id,
-                        amount=amount,
-                        description=f"Subscription payment for {package_name}"
+                        total_amount=amount,
+                        pdf_path=f"/invoices/{invoice_number}.pdf",
+                        status="paid",
+                        issue_date=datetime.datetime.utcnow()
                     )
                     
-                    # Send confirmation email with invoice
-                    email_service.send_payment_confirmation(
-                        payment.metadata.get("email"),
-                        package_name,
-                        amount,
-                        invoice.pdf_path
-                    )
+                    self.db.add(invoice)
                     
-                    result.update({
-                        "status": "paid",
-                        "invoice_number": invoice.invoice_number,
-                        "invoice_path": invoice.pdf_path
-                    })
+                    try:
+                        # Generate PDF invoice
+                        generate_invoice_pdf(invoice)
+                        
+                        # Send confirmation email with invoice
+                        email_service.send_payment_confirmation(
+                            payment.metadata.get("email"),
+                            package_name,
+                            amount,
+                            invoice.pdf_path
+                        )
+                        
+                        self.db.commit()
+                        
+                        result.update({
+                            "status": "paid",
+                            "invoice_number": invoice.invoice_number,
+                            "invoice_path": invoice.pdf_path
+                        })
+                    except Exception as e:
+                        self.db.rollback()
+                        print(f"Error in invoice processing: {str(e)}")
+                        result["status"] = "paid_no_invoice"
+                        result["error"] = str(e)
                 except Exception as e:
                     print(f"Error generating invoice: {str(e)}")
                     result["status"] = "paid_no_invoice"
+                    result["error"] = str(e)
             elif payment.is_failed():
                 result["status"] = "failed"
             

@@ -16,23 +16,12 @@ class CalDAVService:
             self._init_auth()
             
             # Configure Radicale storage
-            from radicale import Application
-            
-            # Create Radicale application with basic configuration
             config = {
-                "server": {
-                    "hosts": ["0.0.0.0:5232"]
-                },
-                "storage": {
-                    "filesystem_folder": "/var/lib/radicale/collections"
-                },
-                "auth": {
-                    "type": "none"
-                }
+                "type": "multifilesystem",
+                "filesystem_folder": "/var/lib/radicale/collections",
             }
             
-            app = Application(config)
-            self.storage = app.storage
+            self.storage = load_storage(config)
         except Exception as e:
             raise HTTPException(
                 status_code=500,

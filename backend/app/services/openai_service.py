@@ -1,6 +1,6 @@
 import os
 from typing import Dict, List, Optional
-import openai
+from openai import OpenAI, APIError, RateLimitError
 from fastapi import HTTPException
 
 class OpenAIService:
@@ -11,7 +11,7 @@ class OpenAIService:
         self.api_key = os.getenv("Open_AI_API")
         if not self.api_key:
             raise ValueError("OpenAI API key not found in environment variables")
-        openai.api_key = self.api_key
+        self.client: OpenAI = OpenAI(api_key=self.api_key)
         
     async def analyze_pdf_text(self, text: str) -> Dict:
         """
@@ -24,7 +24,7 @@ class OpenAIService:
             Dict: Contains extracted tasks and their time estimates
         """
         try:
-            response = await openai.ChatCompletion.acreate(
+            response = await self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": """You are a project management assistant specialized in analyzing project documents and extracting tasks with time estimates. Format your response as JSON with the following structure:
@@ -43,10 +43,10 @@ class OpenAIService:
                     {"role": "user", "content": f"Extract tasks and time estimates from this project document:\n\n{text}"}
                 ]
             )
-            return response['choices'][0]['message']['content']
-        except openai.error.RateLimitError:
+            return response.choices[0].message.content
+        except RateLimitError:
             raise HTTPException(status_code=429, detail="OpenAI API rate limit exceeded")
-        except openai.error.APIError as e:
+        except APIError as e:
             raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
             
     async def analyze_financial_impact(self, project_stats: Dict, tasks: List[Dict]) -> Dict:
@@ -67,7 +67,7 @@ class OpenAIService:
                 "tasks": tasks
             }
             
-            response = await openai.ChatCompletion.acreate(
+            response = await self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": """You are a project management advisor specialized in financial and time impact analysis. Format your response as JSON with the following structure:
@@ -93,10 +93,10 @@ class OpenAIService:
                     {"role": "user", "content": f"Analyze the financial and time impact for this project data:\n\n{context}"}
                 ]
             )
-            return response['choices'][0]['message']['content']
-        except openai.error.RateLimitError:
+            return response.choices[0].message.content
+        except RateLimitError:
             raise HTTPException(status_code=429, detail="OpenAI API rate limit exceeded")
-        except openai.error.APIError as e:
+        except APIError as e:
             raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
             
     async def validate_time_estimates(self, tasks: List[Dict], historical_data: Optional[Dict] = None) -> Dict:
@@ -116,7 +116,7 @@ class OpenAIService:
                 "historical_data": historical_data
             }
             
-            response = await openai.ChatCompletion.acreate(
+            response = await self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": """You are a project estimation validator. Format your response as JSON with the following structure:
@@ -138,8 +138,8 @@ class OpenAIService:
                     {"role": "user", "content": f"Validate these time estimates based on the provided context:\n\n{context}"}
                 ]
             )
-            return response['choices'][0]['message']['content']
-        except openai.error.RateLimitError:
+            return response.choices[0].message.content
+        except RateLimitError:
             raise HTTPException(status_code=429, detail="OpenAI API rate limit exceeded")
-        except openai.error.APIError as e:
+        except APIError as e:
             raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")

@@ -4,6 +4,7 @@ import { apiClient } from '../../api/client';
 import { Invoice } from '../../types/api';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { toast } from 'react-hot-toast';
 
 const InvoiceList: React.FC = () => {
   const { data: invoices, isLoading } = useQuery<Invoice[]>({
@@ -14,8 +15,14 @@ const InvoiceList: React.FC = () => {
     },
   });
 
-  const handleDownload = (invoiceId: number) => {
-    window.open(`${process.env.REACT_APP_API_URL}/invoices/${invoiceId}/download`, '_blank');
+  const handleDownload = async (invoiceId: number) => {
+    try {
+      window.open(`${import.meta.env.VITE_API_URL}/invoices/${invoiceId}/download`, '_blank');
+      toast.success('Rechnung wird heruntergeladen');
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      toast.error('Fehler beim Herunterladen der Rechnung');
+    }
   };
 
   if (isLoading) {

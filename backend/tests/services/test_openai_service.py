@@ -1,13 +1,14 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from fastapi import HTTPException
-import openai
+from openai import OpenAI
+from openai.types.error import APIError, RateLimitError
 from app.services.openai_service import OpenAIService
 import json
 
 @pytest.fixture
 def openai_service():
-    with patch.dict('os.environ', {'Open_AI_API': 'test-key'}):
+    with patch.dict('os.environ', {'Open_AI_API': 'dummy_key_for_testing'}):
         return OpenAIService()
 
 @pytest.mark.asyncio
@@ -31,7 +32,22 @@ async def test_analyze_pdf_text(openai_service):
         }]
     }
     
-    with patch('openai.ChatCompletion.acreate', return_value=mock_response):
+    mock_completion = MagicMock()
+    mock_completion.choices = [
+        MagicMock(message=MagicMock(content=json.dumps({
+            "tasks": [
+                {
+                    "description": "Test task",
+                    "estimated_hours": 4.0,
+                    "confidence": 0.8,
+                    "dependencies": []
+                }
+            ],
+            "total_estimated_hours": 4.0,
+            "risk_factors": ["Test risk"]
+        })))
+    ]
+    with patch.object(openai_service.client.chat.completions, 'create', return_value=mock_completion):
         result = await openai_service.analyze_pdf_text("Test PDF content")
         result_dict = json.loads(result)
         
@@ -71,7 +87,29 @@ async def test_analyze_financial_impact(openai_service):
     project_stats = {"total_estimated_hours": 40}
     tasks = [{"description": "Test task", "estimated_hours": 4}]
     
-    with patch('openai.ChatCompletion.acreate', return_value=mock_response):
+    mock_completion = MagicMock()
+    mock_completion.choices = [
+        MagicMock(message=MagicMock(content=json.dumps({
+            "financial_impact": {
+                "risk_level": "medium",
+                "potential_cost_overrun": 1000.0,
+                "confidence": 0.7
+            },
+            "time_impact": {
+                "risk_level": "low",
+                "potential_delay_hours": 8.0,
+                "confidence": 0.8
+            },
+            "recommendations": [
+                {
+                    "type": "cost",
+                    "description": "Test recommendation",
+                    "priority": "high"
+                }
+            ]
+        })))
+    ]
+    with patch.object(openai_service.client.chat.completions, 'create', return_value=mock_completion):
         result = await openai_service.analyze_financial_impact(project_stats, tasks)
         result_dict = json.loads(result)
         
@@ -106,7 +144,25 @@ async def test_validate_time_estimates(openai_service):
     
     tasks = [{"id": "1", "description": "Test task", "estimated_hours": 4}]
     
-    with patch('openai.ChatCompletion.acreate', return_value=mock_response):
+    mock_completion = MagicMock()
+    mock_completion.choices = [
+        MagicMock(message=MagicMock(content=json.dumps({
+            "validated_tasks": [
+                {
+                    "task_id": "1",
+                    "original_estimate": 4.0,
+                    "suggested_estimate": 5.0,
+                    "confidence": 0.8,
+                    "adjustment_reason": "Test reason"
+                }
+            ],
+            "overall_assessment": {
+                "estimation_quality": "good",
+                "suggestions": ["Test suggestion"]
+            }
+        })))
+    ]
+    with patch.object(openai_service.client.chat.completions, 'create', return_value=mock_completion):
         result = await openai_service.validate_time_estimates(tasks)
         result_dict = json.loads(result)
         
@@ -116,14 +172,14 @@ async def test_validate_time_estimates(openai_service):
 
 @pytest.mark.asyncio
 async def test_openai_rate_limit_error(openai_service):
-    with patch('openai.ChatCompletion.acreate', side_effect=openai.error.RateLimitError()):
+    with patch.object(openai_service.client.chat.completions, 'create', side_effect=RateLimitError()):
         with pytest.raises(HTTPException) as exc_info:
             await openai_service.analyze_pdf_text("Test content")
         assert exc_info.value.status_code == 429
 
 @pytest.mark.asyncio
 async def test_openai_api_error(openai_service):
-    with patch('openai.ChatCompletion.acreate', side_effect=openai.error.APIError()):
+    with patch.object(openai_service.client.chat.completions, 'create', side_effect=APIError()):
         with pytest.raises(HTTPException) as exc_info:
             await openai_service.analyze_pdf_text("Test content")
         assert exc_info.value.status_code == 500
