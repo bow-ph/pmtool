@@ -21,11 +21,12 @@ class InvoiceService:
 
     def generate_invoice_number(self) -> str:
         """Generate a unique invoice number"""
-        year = datetime.now().year
-        # Get the latest invoice number for this year
+        today = datetime.now()
+        year_month = today.strftime('%Y-%m')
+        # Get the latest invoice number for this month
         latest_invoice = (
             self.db.query(Invoice)
-            .filter(Invoice.invoice_number.like(f"INV-{year}-%"))
+            .filter(Invoice.invoice_number.like(f"INV-{year_month}-%"))
             .order_by(Invoice.invoice_number.desc())
             .first()
         )
@@ -36,7 +37,7 @@ class InvoiceService:
         else:
             sequence = 1
 
-        return f"INV-{year}-{sequence:04d}"
+        return f"INV-{year_month}-{sequence:04d}"
 
     def create_invoice(
         self,
@@ -48,42 +49,46 @@ class InvoiceService:
         vat_rate: float,
         description: str,
         currency: str = "EUR",
-        issue_date: Optional[datetime] = None
+        issue_date: Optional[datetime] = None,
+        status: str = "pending"  # Allow status to be specified
     ) -> Invoice:
         """Create a new invoice record and generate PDF"""
-        # Get user and subscription details
-        user = self.db.query(User).filter(User.id == user_id).first()
-        subscription = self.db.query(Subscription).filter(Subscription.id == subscription_id).first()
+        try:
+            # Get user and subscription details
+            user = self.db.query(User).filter(User.id == user_id).first()
+            subscription = self.db.query(Subscription).filter(Subscription.id == subscription_id).first()
 
-        if not user or not subscription:
-            raise ValueError("User or subscription not found")
+            if not user or not subscription:
+                raise ValueError("User or subscription not found")
 
-        # Generate invoice number
-        invoice_number = self.generate_invoice_number()
+            # Generate invoice number
+            invoice_number = self.generate_invoice_number()
 
-        # Create invoice record
-        invoice = Invoice(
-            invoice_number=invoice_number,
-            user_id=user_id,
-            subscription_id=subscription_id,
-            total_amount=total_amount,
-            net_amount=net_amount,
-            vat_amount=vat_amount,
-            vat_rate=vat_rate,
-            currency=currency,
-            status="pending",
-            issue_date=issue_date or datetime.utcnow()
-        )
-        self.db.add(invoice)
-        self.db.flush()  # Get the ID without committing
+            # Create invoice record
+            invoice = Invoice(
+                invoice_number=invoice_number,
+                user_id=user_id,
+                subscription_id=subscription_id,
+                total_amount=total_amount,
+                net_amount=net_amount,
+                vat_amount=vat_amount,
+                vat_rate=vat_rate,
+                currency=currency,
+                status=status,
+                issue_date=issue_date or datetime.utcnow()
+            )
 
-        # Generate PDF
-        pdf_path = self._generate_pdf(invoice, user, subscription, description)
-        invoice.pdf_path = pdf_path
-        invoice.status = "paid"  # Update status since this is called after payment
+            # Generate PDF first to catch any errors before saving to DB
+            pdf_path = self._generate_pdf(invoice, user, subscription, description)
+            invoice.pdf_path = pdf_path
 
-        self.db.commit()
-        return invoice
+            # Save to DB only if PDF generation succeeds
+            self.db.add(invoice)
+            self.db.commit()
+            return invoice
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
     def _generate_pdf(
         self,
@@ -93,7 +98,16 @@ class InvoiceService:
         description: str
     ) -> str:
         """Generate PDF invoice and return the file path"""
-        pdf_path = os.path.join(self.invoice_dir, f"{invoice.invoice_number}.pdf")
+        # Create directory structure YYYY/MM
+        invoice_date = invoice.issue_date or datetime.utcnow()
+        year_month_dir = os.path.join(
+            self.invoice_dir,
+            invoice_date.strftime('%Y'),
+            invoice_date.strftime('%m')
+        )
+        os.makedirs(year_month_dir, exist_ok=True)
+        
+        pdf_path = os.path.join(year_month_dir, f"{invoice.invoice_number}.pdf")
         
         # Create PDF
         c = canvas.Canvas(pdf_path, pagesize=A4)
@@ -122,19 +136,33 @@ class InvoiceService:
         c.drawString(50, y, "Rechnungsempfänger:")
         c.setFont("Helvetica", 12)
         y -= 20
-        if user.client_type == "company":
-            c.drawString(50, y, user.company_name)
+        
+        # Get user details
+        if isinstance(user, dict):
+            client_type = user.get('client_type')
+            company_name = user.get('company_name')
+            contact_person = user.get('contact_person')
+            email = user.get('email', '')
+        else:
+            client_type = getattr(user, 'client_type', None)
+            company_name = getattr(user, 'company_name', None)
+            contact_person = getattr(user, 'contact_person', None)
+            email = getattr(user, 'email', '')
+            
+        if client_type == "company" and company_name:
+            c.drawString(50, y, str(company_name))
             y -= 20
-            if user.contact_person:
-                c.drawString(50, y, f"z.Hd. {user.contact_person}")
+            if contact_person:
+                c.drawString(50, y, f"z.Hd. {contact_person}")
                 y -= 20
         else:
-            c.drawString(50, y, user.email)
+            c.drawString(50, y, str(email or ''))
             y -= 20
         
-        if user.billing_address:
-            for line in user.billing_address.split("\n"):
-                c.drawString(50, y, line)
+        billing_address = getattr(user, 'billing_address', None) if not isinstance(user, dict) else user.get('billing_address')
+        if billing_address:
+            for line in billing_address.split("\n"):
+                c.drawString(50, y, str(line))
                 y -= 20
         
         # Invoice items

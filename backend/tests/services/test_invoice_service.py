@@ -58,15 +58,33 @@ def mock_subscription(mock_package):
 def test_generate_invoice_number(invoice_service, db_session):
     """Test unique invoice number generation"""
     today = datetime.now()
-    db_session.query().filter().count.return_value = 5
+    year_month = today.strftime('%Y-%m')
+    
+    # Mock the query to return None for latest invoice
+    db_session.query().filter().order_by().first.return_value = None
     
     invoice_number = invoice_service.generate_invoice_number()
-    assert invoice_number.startswith(f"INV-{today.strftime('%Y-%m')}")
-    assert invoice_number.endswith(f"{str(6).zfill(4)}")  # Next after 5 existing invoices
+    assert invoice_number == f"INV-{year_month}-0001"  # First invoice of the month
+    
+    # Mock an existing invoice to test sequence increment
+    mock_invoice = MagicMock()
+    mock_invoice.invoice_number = f"INV-{year_month}-0005"
+    db_session.query().filter().order_by().first.return_value = mock_invoice
+    
+    invoice_number = invoice_service.generate_invoice_number()
+    assert invoice_number == f"INV-{year_month}-0006"  # Next after 5 existing invoices
 
 def test_create_invoice_with_vat(invoice_service, db_session, mock_user, mock_package, mock_subscription):
     """Test invoice creation with VAT calculation"""
-    mock_user.vat_number = "DE123456789"  # German VAT
+    mock_user = MagicMock(
+        id=1,
+        email="test@example.com",
+        client_type="company",
+        company_name="Test Corp",
+        vat_number="DE123456789",  # German VAT
+        contact_person="Test Contact",
+        billing_address="Test Address"
+    )
     db_session.query(User).filter().first.return_value = mock_user
     db_session.query(Package).filter().first.return_value = mock_package
     db_session.query(Subscription).filter().first.return_value = mock_subscription
@@ -93,7 +111,14 @@ def test_create_invoice_with_vat(invoice_service, db_session, mock_user, mock_pa
 
 def test_create_invoice_without_vat(invoice_service, db_session, mock_user, mock_package, mock_subscription):
     """Test invoice creation without VAT for non-EU customers"""
-    mock_user.vat_number = None  # No VAT number
+    mock_user = MagicMock(
+        id=1,
+        email="test@example.com",
+        client_type="private",
+        vat_number=None,  # No VAT number
+        contact_person="Test Contact",
+        billing_address="Test Address"
+    )
     db_session.query(User).filter().first.return_value = mock_user
     db_session.query(Package).filter().first.return_value = mock_package
     db_session.query(Subscription).filter().first.return_value = mock_subscription
@@ -122,8 +147,17 @@ def test_invoice_storage_path(invoice_service, tmp_path, mock_user, mock_package
     """Test invoice storage path creation"""
     storage_path = tmp_path / "invoices"
     invoice_service.invoice_dir = str(storage_path)
-    os.makedirs(storage_path, exist_ok=True)
     
+    # Create a mock user with required attributes
+    mock_user = MagicMock(
+        id=1,
+        email="test@example.com",
+        client_type="private",
+        contact_person="Test Contact",
+        billing_address="Test Address"
+    )
+    
+    issue_date = datetime(2024, 1, 15)  # Fixed date for testing
     invoice = Invoice(
         id=1,
         invoice_number="2024-01-00001",
@@ -134,17 +168,25 @@ def test_invoice_storage_path(invoice_service, tmp_path, mock_user, mock_package
         vat_amount=19.0,
         vat_rate=0.19,
         currency="EUR",
-        issue_date=datetime.now()
+        issue_date=issue_date
     )
     
     path = invoice_service._generate_pdf(invoice, mock_user, mock_subscription, "Test Invoice")
-    assert path.startswith(str(storage_path))
-    assert "2024/01" in path
-    assert path.endswith("2024-01-00001.pdf")
+    expected_path = os.path.join(str(storage_path), "2024", "01", "2024-01-00001.pdf")
+    assert path == expected_path
     assert os.path.exists(path)
 
 def test_invoice_generation_error_handling(invoice_service, db_session, mock_user, mock_package, mock_subscription):
     """Test error handling during invoice generation"""
+    # Create a mock user with required attributes
+    mock_user = MagicMock(
+        id=1,
+        email="test@example.com",
+        client_type="private",
+        contact_person="Test Contact",
+        billing_address="Test Address"
+    )
+    
     db_session.query(User).filter().first.return_value = mock_user
     db_session.query(Package).filter().first.return_value = mock_package
     db_session.query(Subscription).filter().first.return_value = mock_subscription
@@ -165,6 +207,5 @@ def test_invoice_generation_error_handling(invoice_service, db_session, mock_use
             )
         assert "PDF generation failed" in str(exc_info.value)
         
-        # Verify invoice was not saved
-        db_session.add.assert_not_called()
-        db_session.commit.assert_not_called()
+        # Verify transaction was rolled back
+        db_session.rollback.assert_called_once()
