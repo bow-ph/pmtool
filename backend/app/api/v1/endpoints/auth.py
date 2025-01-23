@@ -11,12 +11,12 @@ from app.core.auth import (
     verify_password,
 )
 from app.core.config import settings
-from app.db.base import get_db
+from app.core.database import get_db
 from app.models.user import User
 from app.schemas.token import Token
 from app.schemas.user import UserCreate, User as UserSchema
 
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=UserSchema)
 def register(

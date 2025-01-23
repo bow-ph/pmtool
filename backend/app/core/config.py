@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
-    POSTGRES_DB: str = "pmtool"
+    POSTGRES_DB: str = "bow_db"
     SQLALCHEMY_DATABASE_URI: Optional[str] = None
 
     @property
@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     CALDAV_SERVER_URL: str = "https://pm.bow-agentur.de/caldav"
     CALDAV_USERNAME: Optional[str] = None  # Set via environment variable CALDAV_USERNAME
     CALDAV_PASSWORD: Optional[str] = None  # Set via environment variable CALDAV_PASSWORD
-    CALDAV_AUTH_ENABLED: bool = True
+    CALDAV_AUTH_ENABLED: str = "false"  # Set to "true" to enable authentication
 
     class Config:
         case_sensitive = True

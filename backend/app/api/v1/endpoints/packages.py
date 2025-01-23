@@ -8,9 +8,9 @@ from app.schemas.package import PackageCreate, PackageUpdate
 from app.core.auth import get_current_user
 from app.models.user import User
 
-router = APIRouter()
+router = APIRouter(prefix="/packages", tags=["packages"])
 
-@router.get("/packages", response_model=List[PackageSchema])
+@router.get("/", response_model=List[PackageSchema])
 async def list_packages(
     db: Session = Depends(get_db)
 ):
@@ -18,7 +18,7 @@ async def list_packages(
     packages = db.query(Package).filter(Package.is_active == True).order_by(Package.sort_order).all()
     return packages
 
-@router.post("/packages", response_model=PackageSchema)
+@router.post("/", response_model=PackageSchema)
 async def create_package(
     package: PackageCreate,
     current_user: User = Depends(get_current_user),
@@ -34,7 +34,7 @@ async def create_package(
     db.refresh(db_package)
     return db_package
 
-@router.put("/packages/{package_id}", response_model=PackageSchema)
+@router.put("/{package_id}", response_model=PackageSchema)
 async def update_package(
     package_id: int,
     package: PackageUpdate,
@@ -56,7 +56,7 @@ async def update_package(
     db.refresh(db_package)
     return db_package
 
-@router.delete("/packages/{package_id}")
+@router.delete("/{package_id}")
 async def delete_package(
     package_id: int,
     current_user: User = Depends(get_current_user),

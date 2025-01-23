@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from app.db.base import Base
+from app.core.database import Base
 
 class User(Base):
     __tablename__ = "users"
@@ -30,3 +30,4 @@ class User(Base):
 
     # Relationships
     invoices = relationship("Invoice", back_populates="user")
+    projects = relationship("Project", back_populates="user")
