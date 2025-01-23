@@ -51,12 +51,22 @@ def test_team_package_limits(subscription_service, db_session):
 
 def test_enterprise_package_limits(subscription_service, db_session):
     """Test that enterprise package has custom limits"""
+    current_time = datetime.now()
     mock_subscription = MagicMock()
     mock_subscription.package_type = "enterprise"
-    mock_subscription.start_date = datetime.now()
+    mock_subscription.start_date = current_time
+    mock_subscription.end_date = current_time + timedelta(days=365)
     mock_subscription.project_limit = 50  # Custom limit
     
-    db_session.query(Subscription).filter().first.return_value = mock_subscription
+    # Mock datetime.now() to return a fixed time
+    with patch('app.services.subscription_service.datetime') as mock_datetime:
+        mock_datetime.now.return_value = current_time
+        db_session.query(Subscription).filter().first.return_value = mock_subscription
+        
+        # Test with different project counts
+        for i in range(51):
+            db_session.query(Project).filter().count.return_value = i
+            assert subscription_service.can_create_project(user_id=1) == (i < 50)
     
     # Test with different project counts
     for i in range(51):

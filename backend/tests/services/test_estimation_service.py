@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from app.services.estimation_service import EstimationService
 import json
 
@@ -9,7 +9,12 @@ def db_session():
 
 @pytest.fixture
 def estimation_service(db_session):
-    return EstimationService(db_session)
+    with patch('app.services.openai_service.OpenAI') as mock_openai:
+        mock_client = MagicMock()
+        mock_client.chat.completions.create = AsyncMock()
+        mock_openai.return_value = mock_client
+        service = EstimationService(db_session)
+        return service
 
 def test_analyze_estimate_accuracy(estimation_service, db_session):
     mock_task = MagicMock()
