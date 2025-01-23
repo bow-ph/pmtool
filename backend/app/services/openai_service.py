@@ -33,18 +33,24 @@ class OpenAIService:
             response = await self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": """You are a project management assistant specialized in analyzing project documents and extracting tasks with time estimates. Format your response as JSON with the following structure:
+                    {"role": "system", "content": """You are a project management assistant specialized in analyzing project documents and extracting tasks with time estimates. Analyze the document carefully and provide detailed confidence rationales. Format your response as JSON with the following structure:
 {
     "tasks": [
         {
             "description": "Task description",
             "estimated_hours": float,
             "confidence": float (0-1),
+            "confidence_rationale": "Detailed explanation of confidence score, including factors like task clarity, dependencies, and potential risks",
             "dependencies": ["other task descriptions"]
         }
     ],
     "total_estimated_hours": float,
-    "risk_factors": ["list of potential risks"]
+    "risk_factors": ["list of potential risks"],
+    "confidence_analysis": {
+        "overall_confidence": float (0-1),
+        "rationale": "Detailed explanation of overall confidence in estimates",
+        "improvement_suggestions": ["List of suggestions to improve estimate accuracy"]
+    }
 }"""},
                     {"role": "user", "content": f"Extract tasks and time estimates from this project document:\n\n{text}"}
                 ],
