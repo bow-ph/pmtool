@@ -8,14 +8,17 @@ from app.core.config import settings
 from app.models.subscription import Subscription
 
 router = APIRouter()
-mollie_service = MollieService()
+
+def get_mollie_service(db: Session = Depends(get_db)) -> MollieService:
+    return MollieService(db)
 
 @router.post("/customers")
 async def create_customer(
     name: str,
     email: str,
     metadata: Optional[Dict] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    mollie_service: MollieService = Depends(get_mollie_service)
 ):
     """Create a new Mollie customer"""
     return await mollie_service.create_customer(name, email, metadata)
@@ -26,7 +29,8 @@ async def create_subscription(
     amount: float,
     interval: str,
     description: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    mollie_service: MollieService = Depends(get_mollie_service)
 ):
     """Create a subscription for a customer"""
     webhook_url = f"{settings.API_V1_STR}/payments/webhook"
@@ -41,7 +45,8 @@ async def create_subscription(
 @router.get("/subscriptions/{customer_id}")
 async def list_subscriptions(
     customer_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    mollie_service: MollieService = Depends(get_mollie_service)
 ):
     """List all subscriptions for a customer"""
     return await mollie_service.list_subscriptions(customer_id)
@@ -50,7 +55,8 @@ async def list_subscriptions(
 async def get_subscription(
     customer_id: str,
     subscription_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    mollie_service: MollieService = Depends(get_mollie_service)
 ):
     """Get subscription details"""
     return await mollie_service.get_subscription(customer_id, subscription_id)
@@ -59,7 +65,8 @@ async def get_subscription(
 async def cancel_subscription(
     customer_id: str,
     subscription_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    mollie_service: MollieService = Depends(get_mollie_service)
 ):
     """Cancel a subscription"""
     return await mollie_service.cancel_subscription(customer_id, subscription_id)
@@ -67,7 +74,8 @@ async def cancel_subscription(
 @router.post("/webhook")
 async def handle_webhook(
     payment_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    mollie_service: MollieService = Depends(get_mollie_service)
 ):
     """Handle webhook notification from Mollie"""
     try:
