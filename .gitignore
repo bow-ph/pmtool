@@ -1,5 +1,9 @@
 # Python
 __pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*/*/*/__pycache__/
+*/*/*/*/__pycache__/
 *.py[cod]
 *$py.class
 *.so
@@ -45,3 +49,14 @@ frontend/.vite/
 .env
 .env.*
 !.env.example
+
+# Security
+*.key
+*.pem
+*.cert
+*.password
+*.secret
+*.token
+.env.test
+.env.development
+.env.production
