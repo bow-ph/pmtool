@@ -2,6 +2,7 @@ import React from 'react';
 import { usePayment } from '../hooks/usePayment';
 import { toast } from 'react-hot-toast';
 import { SubscriptionResponse } from '../types/api';
+import InvoiceList from '../components/Invoices/InvoiceList';
 
 const AccountSettings: React.FC = () => {
   // TODO: Get actual customer ID from user context
@@ -64,11 +65,12 @@ const AccountSettings: React.FC = () => {
       <div className="px-4 py-6 sm:px-0">
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Mein Konto</h1>
         
-        <div className="mt-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Aktive Abonnements</h2>
-          
-          <div className="mt-4 space-y-4">
-            {subscriptions?.map((subscription: SubscriptionResponse) => (
+        <div className="mt-6 space-y-8">
+          <div>
+            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Aktive Abonnements</h2>
+            
+            <div className="mt-4 space-y-4">
+              {subscriptions?.map((subscription: SubscriptionResponse) => (
               <div
                 key={subscription.id}
                 className="bg-white dark:bg-gray-800 shadow rounded-lg p-6"
@@ -126,6 +128,14 @@ const AccountSettings: React.FC = () => {
                 Sie haben derzeit keine aktiven Abonnements.
               </p>
             )}
+          </div>
+          </div>
+
+          <div>
+            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Rechnungen</h2>
+            <div className="mt-4">
+              <InvoiceList />
+            </div>
           </div>
         </div>
       </div>
