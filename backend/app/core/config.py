@@ -47,6 +47,15 @@ class Settings(BaseSettings):
     MOLLIE_LIVE_API_KEY: str = ""  # Set via environment variable MOLLIE_LIVE_API_KEY
     MOLLIE_MODE: str = "test"  # Set via environment variable MOLLIE_MODE
 
+    # Company Information for Invoices
+    COMPANY_NAME: str = "BOW Agentur"
+    COMPANY_ADDRESS: str = "Musterstraße 123, 12345 Musterstadt"
+    COMPANY_VAT: str = "DE123456789"
+    COMPANY_EMAIL: str = "info@bow-agentur.de"
+    COMPANY_PHONE: str = "+49 123 456789"
+    COMPANY_WEBSITE: str = "https://bow-agentur.de"
+    COMPANY_BANK_INFO: str = "IBAN: DE123456789\nBIC: DEUTDEDB123"
+
     # CalDAV
     CALDAV_SERVER_URL: str = "https://pm.bow-agentur.de/caldav"
     CALDAV_USERNAME: Optional[str] = None  # Set via environment variable CALDAV_USERNAME
