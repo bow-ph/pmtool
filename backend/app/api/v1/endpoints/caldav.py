@@ -11,6 +11,7 @@ from app.core.database import get_db
 from app.models.user import User
 from app.core.auth import get_current_user
 from app.core.config import settings
+from app.services.caldav_service import CalDAVService
 
 # Pydantic models for request/response
 class TaskData(BaseModel):
@@ -40,10 +41,17 @@ def create_calendar(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Mock implementation for calendar creation during development"""
-    calendar_path = f"{current_user.id}/{calendar_name}"
-    caldav_url = f"{settings.CALDAV_SERVER_URL}/{calendar_path}"
-    return CalendarResponse(calendar_path=calendar_path, caldav_url=caldav_url)
+    """Create a new calendar for the current user"""
+    try:
+        caldav_service = CalDAVService()
+        calendar_path = caldav_service.create_calendar(current_user.id, calendar_name)
+        caldav_url = f"{settings.CALDAV_SERVER_URL}/{calendar_path}"
+        return CalendarResponse(calendar_path=calendar_path, caldav_url=caldav_url)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create calendar: {str(e)}"
+        )
 
 @router.post("/tasks/{calendar_path}", response_model=TaskResponse)
 def add_task(
@@ -52,16 +60,23 @@ def add_task(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Mock implementation for task creation during development"""
+    """Add a task to the calendar"""
     if not validate_calendar_path(calendar_path):
         raise HTTPException(
             status_code=400,
             detail="Invalid calendar path. Must be in format: user_id/calendar_name"
         )
     
-    event_uid = str(uuid.uuid4())
-    caldav_url = f"{settings.CALDAV_SERVER_URL}/{calendar_path}"
-    return TaskResponse(event_uid=event_uid, caldav_url=caldav_url)
+    try:
+        caldav_service = CalDAVService()
+        event_uid = caldav_service.add_task(calendar_path, task_data.dict())
+        caldav_url = f"{settings.CALDAV_SERVER_URL}/{calendar_path}"
+        return TaskResponse(event_uid=event_uid, caldav_url=caldav_url)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to add task: {str(e)}"
+        )
 
 @router.put("/tasks/{calendar_path}/{event_uid}", response_model=TaskResponse)
 def update_task(
@@ -71,15 +86,27 @@ def update_task(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Mock implementation for task update during development"""
+    """Update an existing task in the calendar"""
     if not validate_calendar_path(calendar_path):
         raise HTTPException(
             status_code=400,
             detail="Invalid calendar path. Must be in format: user_id/calendar_name"
         )
-        
-    caldav_url = f"{settings.CALDAV_SERVER_URL}/{calendar_path}"
-    return TaskResponse(event_uid=event_uid, caldav_url=caldav_url)
+    
+    try:
+        caldav_service = CalDAVService()
+        if caldav_service.update_task(calendar_path, event_uid, task_data.dict()):
+            caldav_url = f"{settings.CALDAV_SERVER_URL}/{calendar_path}"
+            return TaskResponse(event_uid=event_uid, caldav_url=caldav_url)
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update task: {str(e)}"
+        )
 
 class TaskList(BaseModel):
     tasks: List[TaskData]
@@ -96,15 +123,27 @@ def delete_task(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Mock implementation for task deletion during development"""
+    """Delete a task from the calendar"""
     if not validate_calendar_path(calendar_path):
         raise HTTPException(
             status_code=400,
             detail="Invalid calendar path. Must be in format: user_id/calendar_name"
         )
-        
-    caldav_url = f"{settings.CALDAV_SERVER_URL}/{calendar_path}"
-    return DeleteResponse(status="deleted", caldav_url=caldav_url)
+    
+    try:
+        caldav_service = CalDAVService()
+        if caldav_service.delete_task(calendar_path, event_uid):
+            caldav_url = f"{settings.CALDAV_SERVER_URL}/{calendar_path}"
+            return DeleteResponse(status="deleted", caldav_url=caldav_url)
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete task: {str(e)}"
+        )
 
 @router.get("/tasks/{calendar_path}", response_model=TaskList)
 def get_tasks(
@@ -114,12 +153,20 @@ def get_tasks(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Mock implementation for task listing during development"""
+    """Get tasks from the calendar with optional date filtering"""
     if not validate_calendar_path(calendar_path):
         raise HTTPException(
             status_code=400,
             detail="Invalid calendar path. Must be in format: user_id/calendar_name"
         )
     
-    caldav_url = f"{settings.CALDAV_SERVER_URL}/{calendar_path}"
-    return TaskList(tasks=[], caldav_url=caldav_url)
+    try:
+        caldav_service = CalDAVService()
+        tasks = caldav_service.get_tasks(calendar_path, start_date, end_date)
+        caldav_url = f"{settings.CALDAV_SERVER_URL}/{calendar_path}"
+        return TaskList(tasks=tasks, caldav_url=caldav_url)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get tasks: {str(e)}"
+        )
