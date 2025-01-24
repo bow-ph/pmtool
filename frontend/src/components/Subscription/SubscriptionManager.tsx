@@ -33,7 +33,7 @@ const SubscriptionManager: React.FC = () => {
     },
     onSuccess: () => {
       toast.success('Abonnement erfolgreich gekündigt');
-      queryClient.invalidateQueries(['subscription']);
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
       setShowCancelModal(false);
     },
     onError: (error) => {

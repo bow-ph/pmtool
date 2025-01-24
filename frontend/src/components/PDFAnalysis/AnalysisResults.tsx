@@ -24,15 +24,15 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <p className="text-sm font-medium text-gray-500">Dokumenttyp</p>
-            <p className="mt-1 text-sm text-gray-900 capitalize">{documentAnalysis.type}</p>
+            <p className="mt-1 text-sm text-gray-900 capitalize">{analysisResult.document_analysis.type}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Kundentyp</p>
-            <p className="mt-1 text-sm text-gray-900 capitalize">{documentAnalysis.client_type}</p>
+            <p className="mt-1 text-sm text-gray-900 capitalize">{analysisResult.document_analysis.client_type}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Komplexität</p>
-            <p className="mt-1 text-sm text-gray-900 capitalize">{documentAnalysis.complexity_level}</p>
+            <p className="mt-1 text-sm text-gray-900 capitalize">{analysisResult.document_analysis.complexity_level}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Dokumentklarheit</p>

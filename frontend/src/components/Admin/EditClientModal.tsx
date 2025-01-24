@@ -17,7 +17,7 @@ const EditClientModal: React.FC<EditClientModalProps> = ({ client, onSave, onClo
     shipping_address: client.shipping_address || '',
     phone_number: client.phone_number || '',
     contact_person: client.contact_person || '',
-    notes: client.notes || '',
+    notes: (client as any).notes || '',  // Type assertion for backward compatibility
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -62,7 +62,7 @@ const EditClientModal: React.FC<EditClientModalProps> = ({ client, onSave, onClo
             </label>
             <select
               value={formData.client_type}
-              onChange={(e) => setFormData({ ...formData, client_type: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, client_type: e.target.value as 'private' | 'company' })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             >
               <option value="private">Privat</option>

@@ -22,14 +22,14 @@ export interface Subscription {
   customerId: string;
   packageId: number;
   packageType: SubscriptionTier;
-  projectLimit: number;
+  projectLimit: number | null;
   status: SubscriptionStatus;
   amount: number;
   interval: string;
   startDate: string;
   endDate?: string;
-  lastPaymentDate?: string;
-  nextPaymentDate?: string;
+  lastPaymentDate?: string | null;
+  nextPaymentDate?: string | null;
   createdAt: string;
 }
 
