@@ -1,0 +1,35 @@
+# Network
+bind 127.0.0.1
+port 6379
+protected-mode yes
+
+# General
+daemonize yes
+supervised systemd
+pidfile /var/run/redis/redis-server.pid
+logfile /var/log/redis/redis-server.log
+
+# Security
+requirepass __REDIS_PASSWORD__
+
+# Memory and persistence
+dir /var/lib/redis
+maxmemory 256mb
+maxmemory-policy allkeys-lru
+
+# Disable dangerous commands
+rename-command FLUSHDB ""
+rename-command FLUSHALL ""
+rename-command DEBUG ""
+rename-command CONFIG ""
+rename-command SHUTDOWN ""
+rename-command SAVE ""
+rename-command BGSAVE ""
+rename-command KEYS ""
+
+# Connection settings
+timeout 300
+tcp-keepalive 60
+
+# Logging
+loglevel notice
