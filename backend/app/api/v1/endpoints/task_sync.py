@@ -18,12 +18,12 @@ async def sync_task(
     db: Session = Depends(get_db)
 ):
     """Synchronize a task with the user's calendar"""
+    # Get task
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
     try:
-        # Get task
-        task = db.query(Task).filter(Task.id == task_id).first()
-        if not task:
-            raise HTTPException(status_code=404, detail="Task not found")
-        
         # Create calendar path
         calendar_path = f"{current_user.id}/PM Tool"
         

@@ -39,8 +39,7 @@ def mock_project():
         user_id=1,
         name="Test Project",
         description="Test project description",
-        start_date=datetime.now(),
-        end_date=datetime.now() + timedelta(days=30)
+        status="active"
     )
 
 def test_sync_task_success(mock_user, mock_task, mock_project):
