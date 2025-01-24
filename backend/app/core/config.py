@@ -48,10 +48,11 @@ class Settings(BaseSettings):
     MOLLIE_MODE: str = "test"  # Set via environment variable MOLLIE_MODE
 
     # CalDAV
-    CALDAV_SERVER_URL: str = "https://pm.bow-agentur.de/caldav"
+    CALDAV_SERVER_URL: str = "https://docuplanai.com/caldav"  # Updated to match requirements
     CALDAV_USERNAME: Optional[str] = None  # Set via environment variable CALDAV_USERNAME
     CALDAV_PASSWORD: Optional[str] = None  # Set via environment variable CALDAV_PASSWORD
     CALDAV_AUTH_ENABLED: str = "false"  # Set to "true" to enable authentication
+    CALDAV_STORAGE_PATH: str = "/var/lib/radicale/collections"  # Storage path for CalDAV data
 
     class Config:
         case_sensitive = True

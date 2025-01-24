@@ -39,8 +39,14 @@ class CalDAVService:
                 }
             else:
                 # For production, use real storage
-                storage_path = os.getenv('CALDAV_STORAGE_PATH', '/var/lib/radicale/collections')
-                os.makedirs(storage_path, exist_ok=True)
+                storage_path = settings.CALDAV_STORAGE_PATH
+                try:
+                    os.makedirs(storage_path, mode=0o755, exist_ok=True)
+                except OSError as e:
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"Failed to create CalDAV storage directory: {str(e)}"
+                    )
                 
                 storage_config = {
                     "filesystem_folder": storage_path,
@@ -48,6 +54,9 @@ class CalDAVService:
                     "rights": {
                         "": {"read": True, "write": True},
                         "*": {"read": True, "write": True}
+                    },
+                    "web": {
+                        "type": "none"  # Disable built-in web interface
                     }
                 }
                 self.storage = multifilesystem.Storage(storage_config)
@@ -249,35 +258,17 @@ class CalDAVService:
             # Try to find existing event by task ID
             collection = self.storage.discover(calendar_path)
             if not collection:
-                raise ValueError(f"Calendar not found: {calendar_path}")
-            
-            existing_event = None
-            for event in collection.list():
-                event_data = event.get_component()
-                if event_data.get("x-pm-tool-id") == str(task_data["id"]):
-                    existing_event = event
-                    break
-            
-            if existing_event:
-                # Update existing event
-                event_uid = existing_event.get_component()["uid"]
-                if self.update_task(calendar_path, event_uid, task_data):
-                    return event_uid
-                else:
-                    raise ValueError("Failed to update task in calendar")
-            else:
-                # Create new event
-                event_uid = self.add_task(calendar_path, task_data)
-                if not event_uid:
-                    raise ValueError("Failed to add task to calendar")
-                return event_uid
-        except Exception as e:
-            raise ValueError(f"Failed to sync task: {str(e)}")
-            
-            # Try to find existing event by task ID
-            collection = self.storage.discover(calendar_path)
+                # Try to create calendar if it doesn't exist
+                try:
+                    user_id = calendar_path.split('/')[0]
+                    calendar_name = calendar_path.split('/')[1]
+                    self.create_calendar(int(user_id), calendar_name)
+                    collection = self.storage.discover(calendar_path)
+                except Exception as e:
+                    raise ValueError(f"Failed to create calendar: {str(e)}")
+                
             if not collection:
-                raise ValueError(f"Calendar not found: {calendar_path}")
+                raise ValueError(f"Calendar not found and could not be created: {calendar_path}")
             
             existing_event = None
             for event in collection.list():
