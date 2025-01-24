@@ -20,15 +20,48 @@ class PDFAnalysisService:
         
         # Remove empty lines and common headers/footers
         cleaned_lines = []
-        for line in lines:
+        skip_next = False
+        
+        for i, line in enumerate(lines):
             line = line.strip()
+            
+            # Skip if marked from previous iteration
+            if skip_next:
+                skip_next = False
+                continue
+                
             # Skip empty lines
             if not line:
                 continue
-            # Skip common headers/footers (page numbers, dates, etc.)
-            if line.isdigit() or line.startswith('Page ') or line.startswith('Seite '):
+                
+            # Skip common headers/footers
+            if any([
+                line.isdigit(),  # Page numbers
+                line.startswith(('Page ', 'Seite ')),  # Page headers
+                line.startswith(('Tel:', 'Email:', 'www.')),  # Contact info
+                line.lower().startswith(('datum:', 'date:')),  # Date headers
+                line.startswith(('€', '$', '£')),  # Currency symbols at start
+                line.endswith(('€', '$', '£')),  # Currency symbols at end
+                'copyright' in line.lower(),  # Copyright notices
+                'all rights reserved' in line.lower(),
+                'confidential' in line.lower()
+            ]):
                 continue
-            cleaned_lines.append(line)
+                
+            # Skip address blocks (multiple lines with commas and postal codes)
+            if i < len(lines) - 1:
+                next_line = lines[i + 1].strip()
+                if ((',' in line or ',' in next_line) and 
+                    any(char.isdigit() for char in line + next_line)):
+                    skip_next = True
+                    continue
+                    
+            # Remove common document metadata
+            line = line.replace('Confidential', '').replace('DRAFT', '')
+            line = line.strip('_-=')  # Remove common separators
+            
+            if line:  # Only add non-empty lines after cleaning
+                cleaned_lines.append(line)
             
         return ' '.join(cleaned_lines)
 
@@ -87,13 +120,26 @@ class PDFAnalysisService:
 
         return {
             "status": "success",
+            "document_analysis": analysis_result.get("document_analysis", {
+                "type": "unknown",
+                "context": "",
+                "client_type": "unknown",
+                "complexity_level": "medium",
+                "clarity_score": 0.0
+            }),
             "tasks": created_tasks,
             "total_estimated_hours": analysis_result.get("total_estimated_hours", 0),
             "risk_factors": analysis_result.get("risk_factors", []),
             "confidence_analysis": analysis_result.get("confidence_analysis", {
                 "overall_confidence": 0.0,
                 "rationale": "",
-                "improvement_suggestions": []
+                "improvement_suggestions": [],
+                "accuracy_factors": {
+                    "document_clarity": 0.0,
+                    "technical_complexity": 0.0,
+                    "dependency_risk": 0.0,
+                    "client_input_risk": 0.0
+                }
             })
         }
 

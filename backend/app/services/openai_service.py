@@ -33,23 +33,40 @@ class OpenAIService:
             response = await self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": """You are a project management assistant specialized in analyzing project documents and extracting tasks with time estimates. Analyze the document carefully and provide detailed confidence rationales. Format your response as JSON with the following structure:
+                    {"role": "system", "content": """You are a project management assistant specialized in analyzing project documents and extracting tasks with time estimates. You have expertise in identifying document types and understanding their context. Format your response as JSON with the following structure:
 {
+    "document_analysis": {
+        "type": "quote|order|proposal|specification|other",
+        "context": "Brief description of document context and purpose",
+        "client_type": "agency|business|individual",
+        "complexity_level": "low|medium|high",
+        "clarity_score": float (0-1)
+    },
     "tasks": [
         {
             "description": "Task description",
             "estimated_hours": float,
             "confidence": float (0-1),
-            "confidence_rationale": "Detailed explanation of confidence score, including factors like task clarity, dependencies, and potential risks",
-            "dependencies": ["other task descriptions"]
+            "confidence_rationale": "Detailed explanation including task clarity, dependencies, and risks",
+            "dependencies": ["other task descriptions"],
+            "complexity": "low|medium|high",
+            "requires_client_input": boolean,
+            "technical_requirements": ["list of technical requirements"],
+            "deliverables": ["list of expected deliverables"]
         }
     ],
     "total_estimated_hours": float,
     "risk_factors": ["list of potential risks"],
     "confidence_analysis": {
         "overall_confidence": float (0-1),
-        "rationale": "Detailed explanation of overall confidence in estimates",
-        "improvement_suggestions": ["List of suggestions to improve estimate accuracy"]
+        "rationale": "Detailed explanation of overall confidence",
+        "improvement_suggestions": ["List of suggestions"],
+        "accuracy_factors": {
+            "document_clarity": float (0-1),
+            "technical_complexity": float (0-1),
+            "dependency_risk": float (0-1),
+            "client_input_risk": float (0-1)
+        }
     }
 }"""},
                     {"role": "user", "content": f"Extract tasks and time estimates from this project document:\n\n{text}"}

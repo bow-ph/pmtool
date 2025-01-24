@@ -23,7 +23,19 @@ const PDFAnalysisContainer: React.FC<PDFAnalysisContainerProps> = ({ projectId }
           tasks={analysisResult.tasks}
           totalEstimatedHours={analysisResult.total_estimated_hours}
           riskFactors={analysisResult.risk_factors}
-          confidenceAnalysis={analysisResult.confidence_analysis}
+          documentAnalysis={{
+            type: analysisResult.document_analysis.type,
+            context: analysisResult.document_analysis.context,
+            client_type: analysisResult.document_analysis.client_type,
+            complexity_level: analysisResult.document_analysis.complexity_level,
+            clarity_score: analysisResult.document_analysis.clarity_score
+          }}
+          confidenceAnalysis={{
+            overall_confidence: analysisResult.confidence_analysis.overall_confidence,
+            rationale: analysisResult.confidence_analysis.rationale,
+            improvement_suggestions: analysisResult.confidence_analysis.improvement_suggestions,
+            accuracy_factors: analysisResult.confidence_analysis.accuracy_factors
+          }}
         />
       )}
     </div>
