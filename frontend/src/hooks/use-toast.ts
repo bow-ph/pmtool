@@ -2,11 +2,18 @@
 
 // Inspired by react-hot-toast library
 import * as React from "react"
+import { toast as hotToast } from 'react-hot-toast';
 
-import { toast } from 'react-hot-toast';
-
-type ToastProps = Parameters<typeof toast>[0];
+type ToastProps = {
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  action?: React.ReactElement;
+  duration?: number;
+  variant?: 'default' | 'success' | 'error';
+};
 type ToastActionElement = React.ReactElement;
+
+export const toast = hotToast;
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000

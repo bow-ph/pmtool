@@ -49,10 +49,10 @@ const AdminClients: React.FC = () => {
       return response.data;
     },
     onSuccess: () => {
-      toast.success('Kunde erfolgreich aktualisiert');
+      toast('Kunde erfolgreich aktualisiert', { variant: 'success' });
     },
     onError: (error) => {
-      toast.error(`Fehler beim Aktualisieren: ${error.message}`);
+      toast(`Fehler beim Aktualisieren: ${error.message}`, { variant: 'error' });
     },
   });
 
@@ -73,7 +73,7 @@ const AdminClients: React.FC = () => {
   });
 
   if (error) {
-    toast.error('Fehler beim Laden der Kunden');
+    toast('Fehler beim Laden der Kunden', { variant: 'error' });
   }
 
   return (
@@ -244,7 +244,7 @@ const AdminClients: React.FC = () => {
                                   setSelectedClient(client);
                                   setShowInvoiceModal(true);
                                 } else {
-                                  toast.info('Keine Rechnungen vorhanden');
+                                  toast('Keine Rechnungen vorhanden', { variant: 'default' });
                                 }
                               }}
                               className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 block"
