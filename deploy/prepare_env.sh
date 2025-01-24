@@ -29,15 +29,6 @@ if [ -n "$Sendgrid___DocuPlanAI" ]; then
     sed -i "s|__SENDGRID_API_KEY__|$Sendgrid___DocuPlanAI|g" .env
 fi
 
-# Server Configuration
-if [ -n "$Server_IP_docuplanai" ]; then
-    sed -i "s|__SERVER_IP_DOCUPLANAI__|$Server_IP_docuplanai|g" .env
-fi
-
-if [ -n "$Passwort_docuplanai" ]; then
-    sed -i "s|__SERVER_PASSWORD_DOCUPLANAI__|$Passwort_docuplanai|g" .env
-fi
-
 # Service Configuration
 sed -i "s|__DB_HOST__|localhost|g" .env
 sed -i "s|__DB_PASSWORD__|$DB_PASSWORD|g" .env
@@ -60,4 +51,4 @@ echo "Redis password: $REDIS_PASSWORD"
 echo "JWT secret: $JWT_SECRET"
 echo "Session secret: $SESSION_SECRET"
 echo
-echo "Please save these credentials securely and update your password manager."
+echo "Please save these credentials securely."
