@@ -6,24 +6,31 @@ DEPLOY_PATH="/var/www/docuplanai"
 
 # Check for required environment variables
 echo "Checking environment variables..."
-if [ -z "$Open_AI_API" ] || [ -z "$Mollie___Test_API_Key" ] || [ -z "$Mollie___Live_API_Key" ] || [ -z "$Sendgrid___DocuPlanAI" ]; then
-    echo "Error: Missing required API keys"
-    exit 1
-fi
+required_vars=(
+    "Open_AI_API"
+    "Mollie___Test_API_Key"
+    "Mollie___Live_API_Key"
+    "Sendgrid___DocuPlanAI"
+    "Server_IP_docuplanai"
+    "Passwort_docuplanai"
+)
+
+for var in "${required_vars[@]}"; do
+    if [ -z "${!var}" ]; then
+        echo "Error: Missing required environment variable: $var"
+        exit 1
+    fi
+done
 
 # Setup SSH configuration
 mkdir -p ~/.ssh
 chmod 700 ~/.ssh
-echo -e "Host docuplanai\n  HostName 116.202.15.157\n  User root\n  IdentityFile ~/.ssh/docuplanai_deploy\n  StrictHostKeyChecking no" > ~/.ssh/config
+echo -e "Host docuplanai\n  HostName ${Server_IP_docuplanai}\n  User root\n  IdentityFile ~/.ssh/docuplanai_deploy\n  StrictHostKeyChecking no" > ~/.ssh/config
 chmod 600 ~/.ssh/docuplanai_deploy
 
-# Update environment configuration
-echo "Updating environment configuration..."
-cp deploy/config.template.env backend/.env
-sed -i "s/__OPENAI_API_KEY__/$Open_AI_API/g" backend/.env
-sed -i "s/__MOLLIE_TEST_API_KEY__/$Mollie___Test_API_Key/g" backend/.env
-sed -i "s/__MOLLIE_LIVE_API_KEY__/$Mollie___Live_API_Key/g" backend/.env
-sed -i "s/__SENDGRID_API_KEY__/$Sendgrid___DocuPlanAI/g" backend/.env
+# Prepare environment configuration
+echo "Preparing environment configuration..."
+./deploy/prepare_env.sh
 
 # Create deployment directories
 ssh docuplanai "mkdir -p $DEPLOY_PATH/{html,backend}"
