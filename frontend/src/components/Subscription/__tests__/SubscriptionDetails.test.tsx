@@ -1,5 +1,5 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { Subscription } from '../../../types/subscription';
 import SubscriptionDetails from '../SubscriptionDetails';
 
 describe('SubscriptionDetails', () => {

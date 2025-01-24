@@ -7,8 +7,8 @@ interface AnalysisResultsProps {
   tasks: Task[];
   totalEstimatedHours: number;
   riskFactors: string[];
-  documentAnalysis: PdfAnalysisResponse['document_analysis'];
-  confidenceAnalysis: PdfAnalysisResponse['confidence_analysis'];
+  documentAnalysis?: PdfAnalysisResponse['document_analysis'];
+  confidenceAnalysis?: PdfAnalysisResponse['confidence_analysis'];
 }
 
 const AnalysisResults: React.FC<AnalysisResultsProps> = ({
@@ -24,15 +24,15 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <p className="text-sm font-medium text-gray-500">Dokumenttyp</p>
-            <p className="mt-1 text-sm text-gray-900 capitalize">{analysisResult.document_analysis.type}</p>
+            <p className="mt-1 text-sm text-gray-900 capitalize">{documentAnalysis?.type || 'Unbekannt'}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Kundentyp</p>
-            <p className="mt-1 text-sm text-gray-900 capitalize">{analysisResult.document_analysis.client_type}</p>
+            <p className="mt-1 text-sm text-gray-900 capitalize">{documentAnalysis?.client_type || 'Unbekannt'}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Komplexität</p>
-            <p className="mt-1 text-sm text-gray-900 capitalize">{analysisResult.document_analysis.complexity_level}</p>
+            <p className="mt-1 text-sm text-gray-900 capitalize">{documentAnalysis?.complexity_level || 'Mittel'}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Dokumentklarheit</p>
@@ -40,22 +40,22 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               <div className="w-24 bg-gray-200 rounded-full h-2">
                 <div
                   className={`h-2 rounded-full ${
-                    documentAnalysis.clarity_score >= 0.8
+                    (documentAnalysis?.clarity_score || 0) >= 0.8
                       ? 'bg-green-500'
-                      : documentAnalysis.clarity_score >= 0.6
+                      : (documentAnalysis?.clarity_score || 0) >= 0.6
                       ? 'bg-yellow-500'
                       : 'bg-red-500'
                   }`}
-                  style={{ width: `${Math.round(documentAnalysis.clarity_score * 100)}%` }}
+                  style={{ width: `${Math.round((documentAnalysis?.clarity_score || 0) * 100)}%` }}
                 />
               </div>
               <span className="ml-2 text-sm text-gray-600">
-                {Math.round(documentAnalysis.clarity_score * 100)}%
+                {Math.round((documentAnalysis?.clarity_score || 0) * 100)}%
               </span>
             </div>
           </div>
         </div>
-        <p className="text-sm text-gray-600">{documentAnalysis.context}</p>
+        <p className="text-sm text-gray-600">{documentAnalysis?.context || 'Keine Kontextinformationen verfügbar'}</p>
       </div>
 
       <div className="bg-white shadow rounded-lg p-6">
