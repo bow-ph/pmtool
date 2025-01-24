@@ -1,20 +1,19 @@
 from typing import List, Optional
+import os
+import base64
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import (
     Mail, Attachment, FileContent, FileName, FileType, 
-    Disposition, Personalization, To, From
+    Disposition, Personalization, To, From, Content
 )
 from app.core.config import settings
-import base64
-import os
 from pathlib import Path
 
 class EmailService:
     def __init__(self):
-        self.client = SendGridAPIClient(settings.SMTP_PASSWORD)
+        self.client = SendGridAPIClient(os.getenv("Sendgrid___DocuPlanAI"))
         self.from_email = settings.EMAILS_FROM_EMAIL
         self.from_name = settings.EMAILS_FROM_NAME
-        self.default_personalization = Personalization()
 
     def send_email(
         self,
@@ -26,24 +25,6 @@ class EmailService:
     ) -> bool:
         """Send email using SendGrid"""
         try:
-            # Create base message
-            message = Mail()
-            
-            # Set from email
-            message.from_email = From(email=self.from_email, name=self.from_name)
-            
-            # Add personalization
-            personalization = Personalization()
-            personalization.add_to(To(email=to_email))
-            message.add_personalization(personalization)
-            
-            # Set content
-            message.subject = subject
-            message.content = [{
-                "type": "text/html",
-                "value": html_content
-            }]
-
             # Create message with proper structure using helper classes
             message = Mail()
             message.from_email = From(email=self.from_email, name=self.from_name)
@@ -51,10 +32,7 @@ class EmailService:
             personalization.add_to(To(email=to_email))
             message.add_personalization(personalization)
             message.subject = subject
-            message.content = [{
-                "type": "text/html",
-                "value": html_content
-            }]
+            message.add_content(Content("text/html", html_content))
 
             # Handle attachments
             if attachments:
@@ -68,8 +46,8 @@ class EmailService:
                             file_content = base64.b64encode(f.read()).decode()
                             attachment = Attachment()
                             attachment.file_content = FileContent(file_content)
-                            attachment.file_name = FileName(filename)
                             attachment.file_type = FileType('application/pdf')
+                            attachment.file_name = FileName(filename)
                             attachment.disposition = Disposition('attachment')
                             message.add_attachment(attachment)
                     except Exception as e:
@@ -80,7 +58,7 @@ class EmailService:
             self.client.send(message)
             return True
         except Exception as e:
-            error_msg = f"Failed to send {subject.lower()} email to {to_email}: {str(e)}"
+            error_msg = f"Failed to send {email_type} email to {to_email}: {str(e)}"
             print(error_msg)
             return False
 
@@ -101,7 +79,7 @@ class EmailService:
         <p>Mit freundlichen Grüßen<br>Ihr DocuPlanAI Team</p>
         """
         try:
-            return self.send_email(to_email, subject, content)
+            return self.send_email(to_email, subject, content, email_type="welcome")
         except Exception as e:
             print(f"Failed to send welcome email to {to_email}: {str(e)}")
             return False
@@ -118,7 +96,7 @@ class EmailService:
         <p>Mit freundlichen Grüßen<br>Ihr DocuPlanAI Team</p>
         """
         try:
-            return self.send_email(to_email, subject, content)
+            return self.send_email(to_email, subject, content, email_type="password reset")
         except Exception as e:
             print(f"Failed to send password reset email to {to_email}: {str(e)}")
             return False
@@ -131,7 +109,7 @@ class EmailService:
         invoice_path: str
     ) -> bool:
         """Send payment confirmation with invoice"""
-        subject = f"Zahlungsbestätigung - {package_name} Paket"
+        subject = f"Zahlungsbestätigung - {package_name}"
         content = f"""
         <h2>Zahlungsbestätigung</h2>
         <p>Vielen Dank für Ihre Zahlung von €{amount:.2f} für das {package_name} Paket.</p>
@@ -142,10 +120,10 @@ class EmailService:
         try:
             if not invoice_path or not os.path.exists(invoice_path):
                 print(f"Invoice file not found at {invoice_path}")
-                return self.send_email(to_email, subject, content)
+                return self.send_email(to_email, subject, content, email_type="payment confirmation")
                 
-            attachments = [(invoice_path, f"rechnung_{package_name.lower()}.pdf")]
-            return self.send_email(to_email, subject, content, attachments)
+            attachments = [(invoice_path, f"rechnung_{package_name.lower().replace(' ', '_')}.pdf")]
+            return self.send_email(to_email, subject, content, attachments, email_type="payment confirmation")
         except Exception as e:
             print(f"Failed to send payment confirmation to {to_email}: {str(e)}")
             return False
@@ -161,7 +139,7 @@ class EmailService:
         <p>Mit freundlichen Grüßen<br>Ihr DocuPlanAI Team</p>
         """
         try:
-            return self.send_email(to_email, subject, content)
+            return self.send_email(to_email, subject, content, email_type="subscription expiry notice")
         except Exception as e:
             print(f"Failed to send subscription expiry notice to {to_email}: {str(e)}")
             return False
@@ -178,7 +156,7 @@ class EmailService:
         <p>Mit freundlichen Grüßen<br>Ihr DocuPlanAI Team</p>
         """
         try:
-            return self.send_email(to_email, subject, content)
+            return self.send_email(to_email, subject, content, email_type="subscription cancellation")
         except Exception as e:
             print(f"Failed to send subscription cancellation email to {to_email}: {str(e)}")
             return False

@@ -15,7 +15,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 # Test database URL
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:postgres@localhost/test_bow_db"
+SQLALCHEMY_DATABASE_URL = "postgresql://pmtool:pmtool@localhost/pmtool_test"
 
 @pytest.fixture(scope="session")
 def db_engine():

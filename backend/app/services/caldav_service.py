@@ -28,9 +28,11 @@ class CalDAVService:
                 
                 self.storage.discover = MagicMock(return_value=mock_collection)
                 self.storage.create_collection = MagicMock()
+                # Configure auth based on settings
+                auth_type = "htpasswd" if settings.CALDAV_AUTH_ENABLED else "none"
                 self.storage.configuration = {
                     "auth": {
-                        "type": "none",
+                        "type": auth_type,
                         "htpasswd_filename": "/etc/radicale/users",
                         "htpasswd_encryption": "bcrypt"
                     }
