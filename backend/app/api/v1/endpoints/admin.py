@@ -3,10 +3,110 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.core.database import get_db
 from app.models.user import User
+from app.models.subscription import Subscription
+from app.models.invoice import Invoice
 from app.schemas.user import User as UserSchema, UserUpdate
+from app.schemas.subscription import SubscriptionResponse, SubscriptionUpdate
+from app.schemas.invoice import InvoiceResponse
 from app.core.auth import get_current_user, require_superuser
 
 router = APIRouter(tags=["admin"])
+
+@router.get("/subscriptions", response_model=List[SubscriptionResponse])
+async def get_all_subscriptions(
+    current_user: User = Depends(require_superuser),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all subscriptions with their details.
+    Only accessible by superusers.
+    """
+    subscriptions = db.query(Subscription).all()
+    return subscriptions
+
+@router.get("/invoices", response_model=List[InvoiceResponse])
+async def get_all_invoices(
+    current_user: User = Depends(require_superuser),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all invoices with their details.
+    Only accessible by superusers.
+    """
+    invoices = db.query(Invoice).all()
+    return invoices
+
+@router.get("/users/{user_id}/subscriptions", response_model=List[SubscriptionResponse])
+async def get_user_subscriptions(
+    user_id: int,
+    current_user: User = Depends(require_superuser),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all subscriptions for a specific user.
+    Only accessible by superusers.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    subscriptions = db.query(Subscription).filter(Subscription.user_id == user_id).all()
+    return subscriptions
+
+@router.get("/users/{user_id}/invoices", response_model=List[InvoiceResponse])
+async def get_user_invoices(
+    user_id: int,
+    current_user: User = Depends(require_superuser),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all invoices for a specific user.
+    Only accessible by superusers.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    invoices = db.query(Invoice).filter(Invoice.user_id == user_id).all()
+    return invoices
+
+@router.put("/subscriptions/{subscription_id}", response_model=SubscriptionResponse)
+async def update_subscription(
+    subscription_id: int,
+    subscription_update: SubscriptionUpdate,
+    current_user: User = Depends(require_superuser),
+    db: Session = Depends(get_db)
+):
+    """
+    Update subscription details.
+    Only accessible by superusers.
+    """
+    subscription = db.query(Subscription).filter(Subscription.id == subscription_id).first()
+    if not subscription:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Subscription not found"
+        )
+    
+    for field, value in subscription_update.model_dump(exclude_unset=True).items():
+        setattr(subscription, field, value)
+    
+    try:
+        db.commit()
+        db.refresh(subscription)
+        return subscription
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error updating subscription: {str(e)}"
+        )
 
 @router.get("/users", response_model=List[UserSchema])
 async def get_all_users(
