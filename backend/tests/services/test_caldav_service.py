@@ -23,7 +23,10 @@ def caldav_service(monkeypatch):
         "summary": "Test Task",
         "dtstart": datetime.now().strftime("%Y%m%dT%H%M%SZ"),
         "dtend": (datetime.now() + timedelta(hours=2)).strftime("%Y%m%dT%H%M%SZ"),
-        "description": "Estimated hours: 2.0"
+        "description": "Estimated hours: 2.0",
+        "x-pm-tool-estimated-hours": "2.0",
+        "x-pm-tool-confidence": "0.8",
+        "x-pm-tool-rationale": "Test rationale"
     }
     mock_event.get_component.return_value = mock_event_data
     service.storage.discover().get_item.return_value = mock_event
@@ -97,7 +100,10 @@ async def test_get_tasks(caldav_service):
         "summary": "Test Task",
         "dtstart": start_date.strftime("%Y%m%dT%H%M%SZ"),
         "dtend": (start_date + timedelta(hours=2)).strftime("%Y%m%dT%H%M%SZ"),
-        "description": "Estimated hours: 2.0"
+        "description": "Estimated hours: 2.0",
+        "x-pm-tool-estimated-hours": "2.0",
+        "x-pm-tool-confidence": "0.8",
+        "x-pm-tool-rationale": "Test rationale"
     }
     
     tasks = caldav_service.get_tasks(calendar_path, start_date, end_date)
