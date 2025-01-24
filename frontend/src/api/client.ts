@@ -33,4 +33,16 @@ export const queryClient = new QueryClient({
 export const endpoints = {
   analyzePdf: (projectId: number) => `/projects/${projectId}/analyze-pdf`,
   getProactiveHints: (projectId: number) => `/projects/${projectId}/proactive-hints`,
+  // Todo endpoints
+  getTodos: (projectId: number) => `/todo/project/${projectId}`,
+  updateTodo: (todoId: number) => `/todo/${todoId}`,
+  syncTodos: (projectId: number) => `/task-sync/project/${projectId}`,
+  getSyncStatus: (projectId: number) => `/task-sync/status/${projectId}`,
+  // Calendar endpoints
+  getCalendars: () => '/caldav/calendars',
+  createCalendar: () => '/caldav/calendars',
+  addTask: (calendarPath: string) => `/caldav/tasks/${calendarPath}`,
+  updateTask: (calendarPath: string, eventUid: string) => `/caldav/tasks/${calendarPath}/${eventUid}`,
+  deleteTask: (calendarPath: string, eventUid: string) => `/caldav/tasks/${calendarPath}/${eventUid}`,
+  getTasks: (calendarPath: string) => `/caldav/tasks/${calendarPath}`,
 };
