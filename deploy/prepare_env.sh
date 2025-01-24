@@ -1,9 +1,17 @@
 #!/bin/bash
+set -e
 
 # Create .env file from template
 cp config.template.env .env
 
-# Update API keys and secrets from environment variables
+# Generate secure passwords and secrets
+JWT_SECRET=$(openssl rand -hex 32)
+SESSION_SECRET=$(openssl rand -hex 32)
+DB_PASSWORD=$(openssl rand -hex 16)
+REDIS_PASSWORD=$(openssl rand -hex 16)
+
+echo "Updating environment configuration..."
+
 # API Keys
 if [ -n "$Open_AI_API" ]; then
     sed -i "s|__OPENAI_API_KEY__|$Open_AI_API|g" .env
@@ -30,22 +38,26 @@ if [ -n "$Passwort_docuplanai" ]; then
     sed -i "s|__SERVER_PASSWORD_DOCUPLANAI__|$Passwort_docuplanai|g" .env
 fi
 
-# Set service hosts
-sed -i "s|__REDIS_HOST__|localhost|g" .env
-sed -i "s|__CALDAV_HOST__|localhost|g" .env
+# Service Configuration
 sed -i "s|__DB_HOST__|localhost|g" .env
+sed -i "s|__DB_PASSWORD__|$DB_PASSWORD|g" .env
+sed -i "s|__REDIS_HOST__|localhost|g" .env
+sed -i "s|__REDIS_PASSWORD__|$REDIS_PASSWORD|g" .env
+sed -i "s|__CALDAV_HOST__|localhost|g" .env
+sed -i "s|__JWT_SECRET__|$JWT_SECRET|g" .env
+sed -i "s|__SESSION_SECRET__|$SESSION_SECRET|g" .env
 
-# Generate secure passwords and secrets
-JWT_SECRET=$(openssl rand -hex 32)
-DB_PASSWORD=$(openssl rand -hex 16)
-REDIS_PASSWORD=$(openssl rand -hex 16)
-
-# Update configuration with generated values
-sed -i "s|JWT_SECRET=.*|JWT_SECRET=$JWT_SECRET|g" .env
-sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|g" .env
-sed -i "s|REDIS_PASSWORD=.*|REDIS_PASSWORD=$REDIS_PASSWORD|g" .env
+# Application Configuration
+sed -i "s|__DEBUG__|False|g" .env
+sed -i "s|__ALLOWED_HOSTS__|admin.docuplanai.com,localhost|g" .env
+sed -i "s|__CORS_ORIGINS__|https://docuplanai.com,http://localhost:3000|g" .env
 
 echo "Environment configuration prepared successfully!"
-echo "Generated passwords:"
+echo
+echo "Generated credentials:"
 echo "Database password: $DB_PASSWORD"
 echo "Redis password: $REDIS_PASSWORD"
+echo "JWT secret: $JWT_SECRET"
+echo "Session secret: $SESSION_SECRET"
+echo
+echo "Please save these credentials securely and update your password manager."

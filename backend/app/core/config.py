@@ -1,60 +1,52 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import List, Optional
 
 class Settings(BaseSettings):
-    # Base
-    PROJECT_NAME: str = "PM Tool"
-    API_V1_STR: str = "/api/v1"
-    
-    # Database
-    POSTGRES_SERVER: str = "localhost"
-    POSTGRES_USER: str = "pmtool"
-    POSTGRES_PASSWORD: str = "pmtool"
-    POSTGRES_DB: str = "pmtool"
-    SQLALCHEMY_DATABASE_URI: Optional[str] = None
+    # Database Configuration
+    DB_NAME: str = "pmtool"
+    DB_USER: str = "pmtool"
+    DB_PASSWORD: str
+    DB_HOST: str = "localhost"
 
-    @property
-    def get_database_url(self) -> str:
-        if self.SQLALCHEMY_DATABASE_URI:
-            return self.SQLALCHEMY_DATABASE_URI
-        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}/{self.POSTGRES_DB}"
+    # Redis Configuration
+    REDIS_URL: str = "redis://localhost:6379"
+    REDIS_PASSWORD: Optional[str] = None
 
-    # Security
-    SECRET_KEY: str = ""  # Set via environment variable SECRET_KEY
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
-    
+    # CalDAV Configuration
+    CALDAV_URL: str = "http://localhost:5232"
+    CALDAV_PUBLIC_URL: str = "https://docuplanai.com/caldav"
+
+    # API Keys
+    OPENAI_API_KEY: str
+    MOLLIE_TEST_API_KEY: str
+    MOLLIE_LIVE_API_KEY: str
+    SENDGRID_API_KEY: str
+
+    # Application URLs
+    FRONTEND_URL: str = "https://docuplanai.com"
+    BACKEND_URL: str = "https://admin.docuplanai.com"
+
     # Email Configuration
-    SMTP_TLS: bool = True
-    SMTP_PORT: int = 587  # SendGrid SMTP port
-    SMTP_HOST: str = "smtp.sendgrid.net"
-    SMTP_USER: str = "apikey"  # SendGrid uses 'apikey' as username
-    SMTP_PASSWORD: Optional[str] = None  # Set via environment variable SENDGRID_API_KEY
-    EMAILS_FROM_EMAIL: str = "noreply@bow-agentur.de"
-    EMAILS_FROM_NAME: str = "PM Tool"
-    
-    @property
-    def email_enabled(self) -> bool:
-        return bool(
-            self.SMTP_HOST
-            and self.SMTP_PORT
-            and self.SMTP_USER
-            and self.SMTP_PASSWORD
-            and self.EMAILS_FROM_EMAIL
-        )
+    EMAILS_FROM_EMAIL: str = "noreply@docuplanai.com"
+    EMAILS_FROM_NAME: str = "DocuPlanAI"
 
-    # Mollie
-    MOLLIE_TEST_API_KEY: str = ""  # Set via environment variable MOLLIE_TEST_API_KEY
-    MOLLIE_LIVE_API_KEY: str = ""  # Set via environment variable MOLLIE_LIVE_API_KEY
-    MOLLIE_MODE: str = "test"  # Set via environment variable MOLLIE_MODE
+    # JWT Configuration
+    JWT_SECRET: str
 
-    # CalDAV
-    CALDAV_SERVER_URL: str = "https://pm.bow-agentur.de/caldav"
-    CALDAV_USERNAME: Optional[str] = None  # Set via environment variable CALDAV_USERNAME
-    CALDAV_PASSWORD: Optional[str] = None  # Set via environment variable CALDAV_PASSWORD
-    CALDAV_AUTH_ENABLED: str = "false"  # Set to "true" to enable authentication
+    # Service Configuration
+    DEBUG: bool = False
+    ALLOWED_HOSTS: List[str] = ["admin.docuplanai.com", "localhost"]
+    CORS_ORIGINS: List[str] = ["https://docuplanai.com", "http://localhost:3000"]
 
-    class Config:
-        case_sensitive = True
-        env_file = ".env"
+    # Server Configuration
+    SERVER_IP: Optional[str] = None
+    SERVER_PASSWORD: Optional[str] = None
+
+    # Model Config
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": True,
+        "env_file_encoding": "utf-8"
+    }
 
 settings = Settings()
