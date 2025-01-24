@@ -196,18 +196,18 @@ const AdminClients: React.FC = () => {
                           {subscriptions?.find(s => s.user_id === client.id) ? (
                             <div className="space-y-2">
                               <div className="font-medium text-gray-900 dark:text-gray-100">
-                                {subscriptions.find(s => s.user_id === client.id)?.package_type}
+                                {subscriptions.find(s => s.userId === client.id)?.packageType}
                               </div>
                               <div className="text-xs text-gray-500">
-                                Start: {format(new Date(subscriptions.find(s => s.user_id === client.id)?.start_date || ''), 'dd.MM.yyyy', { locale: de })}
+                                Start: {format(new Date(subscriptions.find(s => s.userId === client.id)?.startDate || ''), 'dd.MM.yyyy', { locale: de })}
                               </div>
-                              {subscriptions.find(s => s.user_id === client.id)?.end_date && (
+                              {subscriptions.find(s => s.userId === client.id)?.endDate && (
                                 <div className="text-xs text-gray-500">
-                                  Ende: {format(new Date(subscriptions.find(s => s.user_id === client.id)?.end_date || ''), 'dd.MM.yyyy', { locale: de })}
+                                  Ende: {format(new Date(subscriptions.find(s => s.userId === client.id)?.endDate || ''), 'dd.MM.yyyy', { locale: de })}
                                 </div>
                               )}
                               <div className="text-xs text-gray-500">
-                                Status: {subscriptions.find(s => s.user_id === client.id)?.status}
+                                Status: {subscriptions.find(s => s.userId === client.id)?.status}
                               </div>
                             </div>
                           ) : (
@@ -244,7 +244,7 @@ const AdminClients: React.FC = () => {
                                   setSelectedClient(client);
                                   setShowInvoiceModal(true);
                                 } else {
-                                  toast({ title: 'Keine Rechnungen vorhanden' });
+                                  toast.info('Keine Rechnungen vorhanden');
                                 }
                               }}
                               className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 block"

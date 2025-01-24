@@ -33,4 +33,7 @@ export const queryClient = new QueryClient({
 export const endpoints = {
   analyzePdf: (projectId: number) => `/projects/${projectId}/analyze-pdf`,
   getProactiveHints: (projectId: number) => `/projects/${projectId}/proactive-hints`,
+  getMySubscription: () => `/subscriptions/me`,
+  checkProjectLimit: () => `/subscriptions/me/project-limit`,
+  cancelSubscription: () => `/subscriptions/me/cancel`,
 };

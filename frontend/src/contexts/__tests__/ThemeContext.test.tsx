@@ -58,7 +58,7 @@ describe('ThemeContext', () => {
 
   it('uses dark theme when system preference is dark', () => {
     mockLocalStorage.getItem.mockReturnValue(null);
-    window.matchMedia.mockImplementationOnce((query: string) => ({
+    (window.matchMedia as jest.Mock).mockImplementationOnce((query: string) => ({
       matches: query === '(prefers-color-scheme: dark)',
       media: query,
       onchange: null,

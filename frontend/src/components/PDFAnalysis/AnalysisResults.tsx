@@ -1,28 +1,14 @@
 import React from 'react';
 import { Task } from '../../types/api';
 
+import { PdfAnalysisResponse } from '../../types/api';
+
 interface AnalysisResultsProps {
   tasks: Task[];
   totalEstimatedHours: number;
   riskFactors: string[];
-  documentAnalysis: {
-    type: string;
-    context: string;
-    client_type: string;
-    complexity_level: string;
-    clarity_score: number;
-  };
-  confidenceAnalysis: {
-    overall_confidence: number;
-    rationale: string;
-    improvement_suggestions: string[];
-    accuracy_factors: {
-      document_clarity: number;
-      technical_complexity: number;
-      dependency_risk: number;
-      client_input_risk: number;
-    };
-  };
+  documentAnalysis: PdfAnalysisResponse['document_analysis'];
+  confidenceAnalysis: PdfAnalysisResponse['confidence_analysis'];
 }
 
 const AnalysisResults: React.FC<AnalysisResultsProps> = ({
