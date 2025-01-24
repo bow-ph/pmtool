@@ -9,11 +9,16 @@ type ToastProps = {
   description?: React.ReactNode;
   action?: React.ReactElement;
   duration?: number;
-  variant?: 'default' | 'success' | 'error';
+  type?: 'success' | 'error' | 'default';
 };
 type ToastActionElement = React.ReactElement;
 
-export const toast = hotToast;
+export const toast = {
+  default: (message: string) => hotToast(message),
+  success: (message: string) => hotToast.success(message),
+  error: (message: string) => hotToast.error(message),
+  info: (message: string) => hotToast(message, { icon: '🔔' })
+};
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
@@ -149,7 +154,7 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
-function toast({ ...props }: Toast) {
+function toastInternal({ ...props }: ToastProps) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -164,10 +169,8 @@ function toast({ ...props }: Toast) {
     toast: {
       ...props,
       id,
-      open: true,
-      onOpenChange: (open) => {
-        if (!open) dismiss()
-      },
+      visible: true,
+      onDismiss: () => dismiss(),
     },
   })
 

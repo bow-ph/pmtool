@@ -49,10 +49,10 @@ const AdminClients: React.FC = () => {
       return response.data;
     },
     onSuccess: () => {
-      toast('Kunde erfolgreich aktualisiert', { variant: 'success' });
+      toast.success('Kunde erfolgreich aktualisiert');
     },
     onError: (error) => {
-      toast(`Fehler beim Aktualisieren: ${error.message}`, { variant: 'error' });
+      toast.error(`Fehler beim Aktualisieren: ${error.message}`);
     },
   });
 
@@ -73,7 +73,7 @@ const AdminClients: React.FC = () => {
   });
 
   if (error) {
-    toast('Fehler beim Laden der Kunden', { variant: 'error' });
+    toast.error('Fehler beim Laden der Kunden');
   }
 
   return (
@@ -193,7 +193,7 @@ const AdminClients: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-3 py-4 text-sm">
-                          {subscriptions?.find(s => s.user_id === client.id) ? (
+                          {subscriptions?.find(s => s.userId === client.id) ? (
                             <div className="space-y-2">
                               <div className="font-medium text-gray-900 dark:text-gray-100">
                                 {subscriptions.find(s => s.userId === client.id)?.packageType}
@@ -244,7 +244,7 @@ const AdminClients: React.FC = () => {
                                   setSelectedClient(client);
                                   setShowInvoiceModal(true);
                                 } else {
-                                  toast('Keine Rechnungen vorhanden', { variant: 'default' });
+                                  toast.info('Keine Rechnungen vorhanden');
                                 }
                               }}
                               className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 block"
