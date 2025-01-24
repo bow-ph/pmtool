@@ -85,8 +85,23 @@ sudo chown -R www-data:www-data /var/www/docuplanai
 sudo chmod -R 750 /var/www/docuplanai
 sudo find /var/www/docuplanai -type d -exec chmod 750 {} \;
 sudo find /var/www/docuplanai -type f -exec chmod 640 {} \;
+
+# Install systemd service and nginx configurations
+sudo cp deploy/docuplanai-backend.service /etc/systemd/system/
+sudo cp deploy/nginx/docuplanai.conf /etc/nginx/sites-available/
+sudo cp deploy/nginx/admin.docuplanai.conf /etc/nginx/sites-available/
+sudo ln -sf /etc/nginx/sites-available/docuplanai.conf /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/admin.docuplanai.conf /etc/nginx/sites-enabled/
+
+# Reload services
+sudo systemctl daemon-reload
+sudo systemctl enable docuplanai-backend
 sudo systemctl start docuplanai-backend
-sudo systemctl restart nginx
+sudo nginx -t && sudo systemctl restart nginx
+
+# Verify service status
+sudo systemctl status docuplanai-backend
+sudo systemctl status nginx
 
 echo "Beta deployment completed successfully!"
 echo "Generated credentials:"
