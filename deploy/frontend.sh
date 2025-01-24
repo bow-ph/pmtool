@@ -6,7 +6,7 @@ npm install
 npm run build:prod
 
 # Create nginx configuration
-cat > /tmp/docuplanai.conf << 'EOL'
+cat > /tmp/pmtool.conf << 'EOL'
 server {
     listen 80;
     server_name docuplanai.com;
@@ -27,6 +27,9 @@ server {
     }
 }
 EOL
+
+# Install rsync if not present and create directory
+ssh root@116.202.15.157 "apt-get update && apt-get install -y rsync && mkdir -p /var/www/docuplanai/html"
 
 # Deploy frontend
 rsync -avz --delete dist/ root@116.202.15.157:/var/www/docuplanai/html/

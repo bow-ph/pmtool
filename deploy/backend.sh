@@ -6,7 +6,7 @@ python -m pip install -r requirements.txt
 alembic upgrade head
 
 # Create systemd service file
-cat > /tmp/docuplanai-backend.service << 'EOL'
+cat > /tmp/pmtool-backend.service << 'EOL'
 [Unit]
 Description=DocuPlanAI Backend
 After=network.target
@@ -16,6 +16,7 @@ User=www-data
 Group=www-data
 WorkingDirectory=/var/www/docuplanai/backend
 Environment="PATH=/var/www/docuplanai/backend/venv/bin"
+Environment="PYTHONPATH=/var/www/docuplanai/backend"
 ExecStart=/var/www/docuplanai/backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 Restart=always
 
@@ -24,7 +25,7 @@ WantedBy=multi-user.target
 EOL
 
 # Create nginx configuration
-cat > /tmp/admin.docuplanai.conf << 'EOL'
+cat > /tmp/pmadmin.conf << 'EOL'
 server {
     listen 80;
     server_name admin.docuplanai.com;
@@ -40,6 +41,11 @@ server {
 }
 EOL
 
+# Install required packages and create directories
+ssh root@116.202.15.157 "apt-get update && \
+    apt-get install -y python3-venv python3-pip nginx postgresql redis-server && \
+    mkdir -p /var/www/docuplanai/backend"
+
 # Deploy backend
 rsync -avz --delete --exclude '.env' . root@116.202.15.157:/var/www/docuplanai/backend/
 scp .env root@116.202.15.157:/var/www/docuplanai/backend/.env
@@ -48,12 +54,12 @@ scp /tmp/admin.docuplanai.conf root@116.202.15.157:/etc/nginx/sites-available/ad
 
 # Configure services
 ssh root@116.202.15.157 "cd /var/www/docuplanai/backend && \
-    python -m venv venv && \
+    python3 -m venv venv && \
     source venv/bin/activate && \
     pip install -r requirements.txt && \
     systemctl daemon-reload && \
-    systemctl enable docuplanai-backend && \
-    systemctl restart docuplanai-backend && \
-    ln -sf /etc/nginx/sites-available/admin.docuplanai.conf /etc/nginx/sites-enabled/ && \
+    systemctl enable pmtool-backend && \
+    systemctl restart pmtool-backend && \
+    ln -sf /etc/nginx/sites-available/pmadmin.conf /etc/nginx/sites-enabled/ && \
     nginx -t && \
     systemctl reload nginx"
