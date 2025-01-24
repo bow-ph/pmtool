@@ -244,7 +244,7 @@ const AdminClients: React.FC = () => {
                                   setSelectedClient(client);
                                   setShowInvoiceModal(true);
                                 } else {
-                                  toast.default('Keine Rechnungen vorhanden');
+                                  toast('Keine Rechnungen vorhanden');
                                 }
                               }}
                               className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 block"
