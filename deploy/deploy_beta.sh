@@ -22,22 +22,10 @@ for var in "${required_vars[@]}"; do
     fi
 done
 
-# Setup SSH configuration
-mkdir -p ~/.ssh
-chmod 700 ~/.ssh
-echo -e "Host docuplanai\n  HostName ${Server_IP_docuplanai}\n  User root\n  IdentityFile ~/.ssh/docuplanai_deploy\n  StrictHostKeyChecking no" > ~/.ssh/config
-chmod 600 ~/.ssh/docuplanai_deploy
-
 # Generate secure passwords
 DB_PASSWORD=$(openssl rand -hex 16)
 REDIS_PASSWORD=$(openssl rand -hex 16)
 JWT_SECRET=$(openssl rand -hex 32)
-
-# Create deployment directories and set permissions (as root)
-sudo mkdir -p $DEPLOY_PATH/{html,backend}
-sudo chown -R www-data:www-data $DEPLOY_PATH
-sudo chmod -R 750 $DEPLOY_PATH
-sudo usermod -d /var/www www-data
 
 # Prepare backend environment
 echo "Preparing backend environment..."
@@ -61,47 +49,29 @@ sed -i "s|__CORS_ORIGINS__|https://docuplanai.com,http://localhost:3000|g" backe
 cd frontend
 npm install
 npm run build:prod
-rsync -avz --delete dist/ docuplanai:$DEPLOY_PATH/html/
+rsync -avz --delete dist/ root@${Server_IP_docuplanai}:$DEPLOY_PATH/html/
 
 # Deploy backend
 cd ../backend
-rsync -avz --delete --exclude '.env' --exclude 'venv' . docuplanai:$DEPLOY_PATH/backend/
-scp .env docuplanai:$DEPLOY_PATH/backend/.env
+rsync -avz --delete --exclude '.env' --exclude 'venv' . root@${Server_IP_docuplanai}:$DEPLOY_PATH/backend/
+scp .env root@${Server_IP_docuplanai}:$DEPLOY_PATH/backend/.env
 
 # Setup backend environment and services
-cd $DEPLOY_PATH/backend
-sudo python3 -m venv venv
-sudo chown -R www-data:www-data venv
-sudo -u www-data bash -c 'source venv/bin/activate && \
-    pip install -r requirements.txt && \
-    pip install alembic && \
-    PYTHONPATH=/var/www/docuplanai/backend alembic upgrade head'
-sudo systemctl restart docuplanai-backend nginx redis-server postgresql
-sudo systemctl enable docuplanai-backend nginx redis-server postgresql
+ssh root@${Server_IP_docuplanai} "cd $DEPLOY_PATH/backend && \
+    python3 -m venv venv && \
+    chown -R www-data:www-data venv && \
+    sudo -u www-data /var/www/docuplanai/backend/venv/bin/pip install -r requirements.txt && \
+    sudo -u www-data /var/www/docuplanai/backend/venv/bin/pip install alembic && \
+    sudo -u www-data PYTHONPATH=/var/www/docuplanai/backend /var/www/docuplanai/backend/venv/bin/alembic upgrade head && \
+    systemctl restart docuplanai-backend nginx redis-server postgresql && \
+    systemctl enable docuplanai-backend nginx redis-server postgresql"
 
-# Configure services and permissions
-sudo systemctl stop docuplanai-backend
-sudo chown -R www-data:www-data /var/www/docuplanai
-sudo chmod -R 750 /var/www/docuplanai
-sudo find /var/www/docuplanai -type d -exec chmod 750 {} \;
-sudo find /var/www/docuplanai -type f -exec chmod 640 {} \;
-
-# Install systemd service and nginx configurations
-sudo cp deploy/docuplanai-backend.service /etc/systemd/system/
-sudo cp deploy/nginx/docuplanai.conf /etc/nginx/sites-available/
-sudo cp deploy/nginx/admin.docuplanai.conf /etc/nginx/sites-available/
-sudo ln -sf /etc/nginx/sites-available/docuplanai.conf /etc/nginx/sites-enabled/
-sudo ln -sf /etc/nginx/sites-available/admin.docuplanai.conf /etc/nginx/sites-enabled/
-
-# Reload services
-sudo systemctl daemon-reload
-sudo systemctl enable docuplanai-backend
-sudo systemctl start docuplanai-backend
-sudo nginx -t && sudo systemctl restart nginx
-
-# Verify service status
-sudo systemctl status docuplanai-backend
-sudo systemctl status nginx
+# Configure services (as root)
+ssh root@${Server_IP_docuplanai} "systemctl stop docuplanai-backend && \
+    chown -R www-data:www-data /var/www/docuplanai && \
+    chmod -R 750 /var/www/docuplanai && \
+    systemctl start docuplanai-backend && \
+    systemctl restart nginx"
 
 echo "Beta deployment completed successfully!"
 echo "Generated credentials:"
