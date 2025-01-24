@@ -39,10 +39,21 @@ export interface Task {
   status: 'pending' | 'in_progress' | 'completed';
   confidence_score: number;
   confidence_rationale?: string;
+  complexity?: 'low' | 'medium' | 'high';
+  requires_client_input?: boolean;
+  technical_requirements?: string[];
+  deliverables?: string[];
 }
 
 export interface PdfAnalysisResponse {
   status: string;
+  document_analysis: {
+    type: 'quote' | 'order' | 'proposal' | 'specification' | 'other';
+    context: string;
+    client_type: 'agency' | 'business' | 'individual';
+    complexity_level: 'low' | 'medium' | 'high';
+    clarity_score: number;
+  };
   tasks: Task[];
   total_estimated_hours: number;
   risk_factors: string[];
@@ -50,6 +61,12 @@ export interface PdfAnalysisResponse {
     overall_confidence: number;
     rationale: string;
     improvement_suggestions: string[];
+    accuracy_factors: {
+      document_clarity: number;
+      technical_complexity: number;
+      dependency_risk: number;
+      client_input_risk: number;
+    };
   };
 }
 
