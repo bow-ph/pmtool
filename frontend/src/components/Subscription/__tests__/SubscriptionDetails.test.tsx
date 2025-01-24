@@ -1,7 +1,5 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { format } from 'date-fns';
-import { de } from 'date-fns/locale';
 import SubscriptionDetails from '../SubscriptionDetails';
 
 describe('SubscriptionDetails', () => {
@@ -18,7 +16,9 @@ describe('SubscriptionDetails', () => {
     interval: '3 months',
     startDate: '2024-01-01T00:00:00Z',
     endDate: '2024-04-01T00:00:00Z',
-    createdAt: '2024-01-01T00:00:00Z'
+    createdAt: '2024-01-01T00:00:00Z',
+    lastPaymentDate: null,
+    nextPaymentDate: null
   };
 
   const mockProjectLimit = {
