@@ -1,26 +1,12 @@
 # DocuPlanAI Setup Guide
 
-## Default Access Credentials
+## Prerequisites
 
-### Frontend (https://docuplanai.com)
-```
-Admin User:
-Email: admin@docuplanai.com
-Password: admin123
-
-Test User:
-Email: test@docuplanai.com
-Password: test123
-```
-
-### Backend Admin UI (https://admin.docuplanai.com)
-```
-Admin User:
-Email: admin@docuplanai.com
-Password: admin123
-```
-
-Note: Change these default passwords immediately after first login.
+- Python 3.12+
+- Node.js 18+
+- PostgreSQL 14+
+- Redis
+- Nginx
 
 ## Quick Start Guide
 
@@ -29,14 +15,14 @@ Note: Change these default passwords immediately after first login.
 #### Required API Keys
 ```bash
 # OpenAI API Key for PDF Analysis
-OPENAI_API_KEY=your_openai_api_key
+OPENAI_API_KEY=__OPENAI_API_KEY__
 
 # Mollie Payment Integration
-MOLLIE_TEST_API_KEY=your_mollie_test_key
-MOLLIE_LIVE_API_KEY=your_mollie_live_key
+MOLLIE_TEST_API_KEY=__MOLLIE_TEST_API_KEY__
+MOLLIE_LIVE_API_KEY=__MOLLIE_LIVE_API_KEY__
 
 # SendGrid Email Service
-SENDGRID_API_KEY=your_sendgrid_api_key
+SENDGRID_API_KEY=__SENDGRID_API_KEY__
 ```
 
 #### Database Configuration
@@ -44,23 +30,23 @@ SENDGRID_API_KEY=your_sendgrid_api_key
 # PostgreSQL Settings
 DB_NAME=pmtool
 DB_USER=pmtool
-DB_PASSWORD=your_secure_password
-DB_HOST=localhost
+DB_PASSWORD=__DB_PASSWORD__
+DB_HOST=__DB_HOST__
 
 # Redis Configuration
-REDIS_URL=redis://localhost:6379
-REDIS_PASSWORD=your_secure_redis_password
+REDIS_URL=redis://__REDIS_HOST__:6379
+REDIS_PASSWORD=__REDIS_PASSWORD__
 
 # CalDAV Configuration
-CALDAV_URL=http://localhost:5232
+CALDAV_URL=http://__CALDAV_HOST__:5232
 CALDAV_PUBLIC_URL=https://docuplanai.com/caldav
 ```
 
 #### Security Configuration
 ```bash
 # JWT and Session Security
-JWT_SECRET=your_secure_jwt_secret
-SESSION_SECRET=your_secure_session_secret
+JWT_SECRET=__JWT_SECRET__
+SESSION_SECRET=__SESSION_SECRET__
 
 # Service Configuration
 DEBUG=False
@@ -114,18 +100,23 @@ sudo systemctl status nginx
 
 ## Service Verification
 
-### Check Service Status
+### Backend Services
 ```bash
-sudo systemctl status postgresql
-sudo systemctl status redis-server
-sudo systemctl status radicale
-sudo systemctl status docuplanai-backend
-sudo systemctl status nginx
+# Check backend service status
+systemctl status docuplanai-backend
+
+# Check logs
+journalctl -u docuplanai-backend -f
 ```
 
-### Test Endpoints
-- Frontend: https://docuplanai.com
-- Backend: https://admin.docuplanai.com/v1/health
+### Frontend Services
+```bash
+# Check nginx configuration
+nginx -t
+
+# Check nginx status
+systemctl status nginx
+```
 
 ## Troubleshooting
 
