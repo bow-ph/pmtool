@@ -10,13 +10,15 @@ describe('SubscriptionDetails', () => {
     userId: 1,
     mollieId: 'sub_test',
     customerId: 'cust_test',
-    packageType: 'team',
+    packageId: 1,
+    packageType: 'team' as const,
     projectLimit: 10,
-    status: 'active',
+    status: 'active' as const,
     amount: 119.0,
     interval: '3 months',
     startDate: '2024-01-01T00:00:00Z',
     endDate: '2024-04-01T00:00:00Z',
+    createdAt: '2024-01-01T00:00:00Z'
   };
 
   const mockProjectLimit = {
@@ -92,7 +94,7 @@ describe('SubscriptionDetails', () => {
   it('displays unlimited projects for enterprise subscription without limit', () => {
     const enterpriseSubscription = {
       ...mockSubscription,
-      packageType: 'enterprise',
+      packageType: 'enterprise' as const,
       projectLimit: null,
       packageId: 2,
       createdAt: '2024-01-01T00:00:00Z'
