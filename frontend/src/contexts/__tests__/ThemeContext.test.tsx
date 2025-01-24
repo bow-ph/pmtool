@@ -1,4 +1,4 @@
-import React from 'react';
+// React is used implicitly by JSX
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ThemeProvider, useTheme } from '../ThemeContext';
 import { act } from 'react-dom/test-utils';

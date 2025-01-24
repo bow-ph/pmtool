@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient, endpoints } from '../../api/client';
-import { User, Invoice, Subscription } from '../../types/api';
+import { apiClient } from '../../api/client';
+import { User, Invoice } from '../../types/api';
+import { Subscription } from '../../types/subscription';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -243,7 +244,7 @@ const AdminClients: React.FC = () => {
                                   setSelectedClient(client);
                                   setShowInvoiceModal(true);
                                 } else {
-                                  toast.info('Keine Rechnungen vorhanden');
+                                  toast({ title: 'Keine Rechnungen vorhanden' });
                                 }
                               }}
                               className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 block"
@@ -282,7 +283,7 @@ const AdminClients: React.FC = () => {
                 userId: selectedClient.id,
                 data
               });
-              queryClient.invalidateQueries(['admin', 'clients']);
+              queryClient.invalidateQueries({ queryKey: ['admin', 'clients'] });
               setShowEditModal(false);
               setSelectedClient(null);
             } catch (error) {

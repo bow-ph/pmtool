@@ -13,11 +13,12 @@ const Dashboard = () => {
     },
   });
 
-  // Mock calendar events based on tasks
+  // Convert tasks to calendar events
   const calendarEvents = tasks?.map(task => ({
     id: task.id?.toString() || '',
     title: task.description,
-    date: new Date(), // TODO: Add actual dates to tasks
+    start_date: new Date(), // TODO: Use actual task dates
+    end_date: new Date(new Date().setHours(new Date().getHours() + task.estimated_hours)),
     type: 'task' as const,
   })) || [];
 

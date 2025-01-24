@@ -38,6 +38,8 @@ const ProjectAnalysis = () => {
                 tasks={analysisResults.tasks}
                 totalEstimatedHours={analysisResults.total_estimated_hours}
                 riskFactors={analysisResults.risk_factors}
+                documentAnalysis={analysisResults.document_analysis}
+                confidenceAnalysis={analysisResults.confidence_analysis}
               />
             </div>
           )}
