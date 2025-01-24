@@ -1,19 +1,57 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '../../api/client';
-import { User } from '../../types/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient, endpoints } from '../../api/client';
+import { User, Invoice, Subscription } from '../../types/api';
 import { toast } from 'react-hot-toast';
+import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
+import InvoiceHistoryModal from '../../components/Admin/InvoiceHistoryModal';
+import EditClientModal from '../../components/Admin/EditClientModal';
 
 const AdminClients: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'private' | 'company'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [selectedClient, setSelectedClient] = useState<User | null>(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  
+  const queryClient = useQueryClient();
 
-  const { data: clients, isLoading, error } = useQuery<User[]>({
+  const { data: clients, isLoading: clientsLoading, error } = useQuery<User[]>({
     queryKey: ['admin', 'clients'],
     queryFn: async () => {
       const response = await apiClient.get('/admin/users');
       return response.data;
+    },
+  });
+
+  const { data: subscriptions, isLoading: subscriptionsLoading } = useQuery<Subscription[]>({
+    queryKey: ['admin', 'subscriptions'],
+    queryFn: async () => {
+      const response = await apiClient.get('/admin/subscriptions');
+      return response.data;
+    },
+  });
+
+  const { data: invoices, isLoading: invoicesLoading } = useQuery<Invoice[]>({
+    queryKey: ['admin', 'invoices'],
+    queryFn: async () => {
+      const response = await apiClient.get('/admin/invoices');
+      return response.data;
+    },
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ userId, data }: { userId: number; data: Partial<User> }) => {
+      const response = await apiClient.put(`/admin/users/${userId}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success('Kunde erfolgreich aktualisiert');
+    },
+    onError: (error) => {
+      toast.error(`Fehler beim Aktualisieren: ${error.message}`);
     },
   });
 
@@ -104,7 +142,7 @@ const AdminClients: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
-                    {isLoading ? (
+                    {clientsLoading || subscriptionsLoading || invoicesLoading ? (
                       <tr>
                         <td colSpan={6} className="text-center py-4">
                           <div className="flex justify-center">
@@ -121,32 +159,98 @@ const AdminClients: React.FC = () => {
                           <div className="text-gray-500 dark:text-gray-400">
                             {client.company_name ? client.email : ''}
                           </div>
+                          {client.billing_address && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {client.billing_address}
+                            </div>
+                          )}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {client.client_type === 'company' ? 'Firma' : 'Privat'}
+                          <div>{client.client_type === 'company' ? 'Firma' : 'Privat'}</div>
+                          {client.vat_number && (
+                            <div className="text-xs mt-1">USt-ID: {client.vat_number}</div>
+                          )}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm">
-                          <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                            client.is_active
-                              ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
-                              : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
-                          }`}>
-                            {client.is_active ? 'Aktiv' : 'Inaktiv'}
-                          </span>
+                          <div className="flex flex-col space-y-2">
+                            <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                              client.is_active
+                                ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
+                                : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
+                            }`}>
+                              {client.is_active ? 'Aktiv' : 'Inaktiv'}
+                            </span>
+                            <button
+                              onClick={() => updateUserMutation.mutate({
+                                userId: client.id,
+                                data: { is_active: !client.is_active }
+                              })}
+                              className="text-xs text-blue-600 hover:text-blue-800"
+                            >
+                              {client.is_active ? 'Deaktivieren' : 'Aktivieren'}
+                            </button>
+                          </div>
                         </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {client.subscription_type || 'Kein Abo'}
+                        <td className="px-3 py-4 text-sm">
+                          {subscriptions?.find(s => s.user_id === client.id) ? (
+                            <div className="space-y-2">
+                              <div className="font-medium text-gray-900 dark:text-gray-100">
+                                {subscriptions.find(s => s.user_id === client.id)?.package_type}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Start: {format(new Date(subscriptions.find(s => s.user_id === client.id)?.start_date || ''), 'dd.MM.yyyy', { locale: de })}
+                              </div>
+                              {subscriptions.find(s => s.user_id === client.id)?.end_date && (
+                                <div className="text-xs text-gray-500">
+                                  Ende: {format(new Date(subscriptions.find(s => s.user_id === client.id)?.end_date || ''), 'dd.MM.yyyy', { locale: de })}
+                                </div>
+                              )}
+                              <div className="text-xs text-gray-500">
+                                Status: {subscriptions.find(s => s.user_id === client.id)?.status}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500">Kein Abo</span>
+                          )}
                         </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {client.phone_number || '-'}
+                        <td className="px-3 py-4 text-sm">
+                          <div className="space-y-2">
+                            <div className="text-gray-900 dark:text-gray-100">
+                              {client.phone_number || '-'}
+                            </div>
+                            {client.contact_person && (
+                              <div className="text-xs text-gray-500">
+                                Kontakt: {client.contact_person}
+                              </div>
+                            )}
+                          </div>
                         </td>
-                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                          <button
-                            onClick={() => {/* TODO: Implement edit functionality */}}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                          >
-                            Bearbeiten
-                          </button>
+                        <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                          <div className="space-y-2">
+                            <button
+                              onClick={() => {
+                                setSelectedClient(client);
+                                setShowEditModal(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 block"
+                            >
+                              Bearbeiten
+                            </button>
+                            <button
+                              onClick={() => {
+                                const invoiceList = invoices?.filter(i => i.user_id === client.id) || [];
+                                if (invoiceList.length > 0) {
+                                  setSelectedClient(client);
+                                  setShowInvoiceModal(true);
+                                } else {
+                                  toast.info('Keine Rechnungen vorhanden');
+                                }
+                              }}
+                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 block"
+                            >
+                              Rechnungen
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -157,6 +261,40 @@ const AdminClients: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      {showInvoiceModal && selectedClient && (
+        <InvoiceHistoryModal
+          invoices={invoices?.filter(i => i.user_id === selectedClient.id) || []}
+          onClose={() => {
+            setShowInvoiceModal(false);
+            setSelectedClient(null);
+          }}
+        />
+      )}
+
+      {showEditModal && selectedClient && (
+        <EditClientModal
+          client={selectedClient}
+          onSave={async (data) => {
+            try {
+              await updateUserMutation.mutateAsync({
+                userId: selectedClient.id,
+                data
+              });
+              queryClient.invalidateQueries(['admin', 'clients']);
+              setShowEditModal(false);
+              setSelectedClient(null);
+            } catch (error) {
+              console.error('Error updating client:', error);
+            }
+          }}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedClient(null);
+          }}
+        />
+      )}
     </div>
   );
 };
