@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.core.database import Base, get_db
-from app.core.auth import get_password_hash, create_access_token
+from app.core.auth import get_password_hash, create_access_token, get_current_user
 from app.models.user import User
 from app.models.package import Package
 from app.models.subscription import Subscription
@@ -35,14 +35,19 @@ def db_session(db_engine):
         session.close()
 
 @pytest.fixture(scope="function")
-def client(db_session):
+def client(db_session, test_user):
     def override_get_db():
         try:
             yield db_session
         finally:
             pass
+            
+    def override_get_current_user():
+        return test_user
     
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = override_get_current_user
+    
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
@@ -108,6 +113,17 @@ def test_user(db_session):
     yield user
     
     # Cleanup after test
+    # Delete in order of dependencies: tasks -> projects -> user
+    db_session.query(Task).filter(
+        Task.project_id.in_(
+            db_session.query(Project.id).filter(Project.user_id == user.id)
+        )
+    ).delete(synchronize_session=False)
+    db_session.commit()
+    
+    db_session.query(Project).filter(Project.user_id == user.id).delete()
+    db_session.commit()
+    
     db_session.query(User).filter(User.id == user.id).delete()
     db_session.commit()
 
@@ -141,6 +157,11 @@ def test_company_user(db_session):
     yield user
     
     # Cleanup after test
+    # First delete projects to avoid foreign key constraint violations
+    db_session.query(Project).filter(Project.user_id == user.id).delete()
+    db_session.commit()
+    
+    # Then delete the user
     db_session.query(User).filter(User.id == user.id).delete()
     db_session.commit()
 

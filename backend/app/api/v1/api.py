@@ -23,4 +23,4 @@ api_router.include_router(invoices.router, prefix="/invoices", tags=["invoices"]
 api_router.include_router(packages.router, prefix="/packages", tags=["packages"])
 api_router.include_router(task_sync.router, prefix="/task-sync", tags=["task-sync"])
 api_router.include_router(scheduling.router, prefix="/scheduling", tags=["scheduling"])
-api_router.include_router(todo.router, prefix="/todo", tags=["todo"])
+api_router.include_router(todo.router, prefix="/todo", tags=["todo"], include_in_schema=True)

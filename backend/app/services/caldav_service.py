@@ -1,6 +1,6 @@
 from radicale import Application as RadicaleApp
 from radicale.storage import load as load_storage, multifilesystem
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 import uuid
 import os
@@ -8,8 +8,6 @@ import bcrypt
 from fastapi import HTTPException
 from app.core.config import settings
 from unittest.mock import MagicMock
-from app.models.task import Task
-from datetime import datetime, timedelta
 
 class CalDAVService:
     def __init__(self):
@@ -155,6 +153,8 @@ class CalDAVService:
                           else "9",
                 "x-pm-tool-id": str(task_data.get("id", "")),
                 "x-pm-tool-estimated-hours": str(task_data["estimated_hours"]),
+                "x-pm-tool-confidence": str(task_data.get("confidence_score", 0.0)),
+                "x-pm-tool-rationale": task_data.get("confidence_rationale", "")
             }
             
             collection.upload(event)
@@ -231,18 +231,48 @@ class CalDAVService:
         except Exception as e:
             raise ValueError(f"Failed to delete task: {str(e)}")
 
-    def sync_task_with_calendar(self, task: Task, calendar_path: str) -> str:
+    def sync_task_with_calendar(self, task_data: Dict[str, Any], calendar_path: str) -> str:
         """Synchronize a task with the calendar, creating or updating as needed"""
         try:
-            task_data = {
-                "description": task.description,
-                "start_date": datetime.now(),  # Default to now if not scheduled
-                "end_date": datetime.now() + timedelta(hours=task.estimated_hours),
-                "estimated_hours": task.estimated_hours,
-                "status": task.status,
-                "confidence_score": task.confidence_score,
-                "id": task.id
-            }
+            # Validate required fields
+            required_fields = ["description", "start_date", "end_date", "estimated_hours", "status", "id"]
+            missing_fields = [field for field in required_fields if field not in task_data]
+            if missing_fields:
+                raise ValueError(f"Missing required fields: {', '.join(missing_fields)}")
+                
+            # Ensure dates are datetime objects
+            if not isinstance(task_data["start_date"], datetime):
+                task_data["start_date"] = datetime.now()
+            if not isinstance(task_data["end_date"], datetime):
+                task_data["end_date"] = datetime.now() + timedelta(hours=task_data["estimated_hours"])
+                
+            # Try to find existing event by task ID
+            collection = self.storage.discover(calendar_path)
+            if not collection:
+                raise ValueError(f"Calendar not found: {calendar_path}")
+            
+            existing_event = None
+            for event in collection.list():
+                event_data = event.get_component()
+                if event_data.get("x-pm-tool-id") == str(task_data["id"]):
+                    existing_event = event
+                    break
+            
+            if existing_event:
+                # Update existing event
+                event_uid = existing_event.get_component()["uid"]
+                if self.update_task(calendar_path, event_uid, task_data):
+                    return event_uid
+                else:
+                    raise ValueError("Failed to update task in calendar")
+            else:
+                # Create new event
+                event_uid = self.add_task(calendar_path, task_data)
+                if not event_uid:
+                    raise ValueError("Failed to add task to calendar")
+                return event_uid
+        except Exception as e:
+            raise ValueError(f"Failed to sync task: {str(e)}")
             
             # Try to find existing event by task ID
             collection = self.storage.discover(calendar_path)
@@ -252,18 +282,23 @@ class CalDAVService:
             existing_event = None
             for event in collection.list():
                 event_data = event.get_component()
-                if event_data.get("x-pm-tool-id") == str(task.id):
+                if event_data.get("x-pm-tool-id") == str(task_data["id"]):
                     existing_event = event
                     break
             
             if existing_event:
                 # Update existing event
                 event_uid = existing_event.get_component()["uid"]
-                self.update_task(calendar_path, event_uid, task_data)
-                return event_uid
+                if self.update_task(calendar_path, event_uid, task_data):
+                    return event_uid
+                else:
+                    raise ValueError("Failed to update task in calendar")
             else:
                 # Create new event
-                return self.add_task(calendar_path, task_data)
+                event_uid = self.add_task(calendar_path, task_data)
+                if not event_uid:
+                    raise ValueError("Failed to add task to calendar")
+                return event_uid
         except Exception as e:
             raise ValueError(f"Failed to sync task: {str(e)}")
     
@@ -297,7 +332,9 @@ class CalDAVService:
                         "priority": ("high" if event_data.get("priority") == "1"
                                   else "medium" if event_data.get("priority") == "5"
                                   else "low"),
-                        "estimated_hours": float(event_data.get("x-pm-tool-estimated-hours", 0))
+                        "estimated_hours": float(event_data.get("x-pm-tool-estimated-hours", "0.0")),
+                        "confidence_score": float(event_data.get("x-pm-tool-confidence", "0.0")),
+                        "confidence_rationale": event_data.get("x-pm-tool-rationale", "")
                     }
                     
                     # Apply date filter if provided

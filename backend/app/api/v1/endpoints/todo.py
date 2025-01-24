@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.core.database import get_db
 from app.models.user import User
@@ -107,15 +107,35 @@ async def update_todo_item(
             
         db.commit()
         
-        # Sync with calendar
         try:
+            # Sync with calendar
             caldav_service = CalDAVService()
             calendar_path = f"{current_user.id}/PM Tool"
-            event_uid = caldav_service.sync_task_with_calendar(task, calendar_path)
+            
+            # Ensure calendar exists
+            try:
+                caldav_service.create_calendar(current_user.id)
+            except Exception:
+                pass  # Calendar might already exist
+            
+            # Prepare task data for sync
+            task_data = {
+                "id": task.id,
+                "description": task.description,
+                "start_date": datetime.now(),
+                "end_date": datetime.now() + timedelta(hours=task.estimated_hours),
+                "estimated_hours": task.estimated_hours,
+                "status": task.status,
+                "priority": task.priority,
+                "confidence_score": task.confidence_score,
+                "confidence_rationale": task.confidence_rationale
+            }
+            
+            event_uid = caldav_service.sync_task_with_calendar(task_data, calendar_path)
             
             return {
                 "status": "success",
-                "task_id": task_id,
+                "task_id": task.id,
                 "caldav_sync": {
                     "status": "synced",
                     "event_uid": event_uid
@@ -124,7 +144,7 @@ async def update_todo_item(
         except Exception as e:
             return {
                 "status": "success",
-                "task_id": task_id,
+                "task_id": task.id,
                 "caldav_sync": {
                     "status": "failed",
                     "error": str(e)

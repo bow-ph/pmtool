@@ -8,9 +8,9 @@ class Settings(BaseSettings):
     
     # Database
     POSTGRES_SERVER: str = "localhost"
-    POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "postgres"
-    POSTGRES_DB: str = "bow_db"
+    POSTGRES_USER: str = "pmtool"
+    POSTGRES_PASSWORD: str = "pmtool"
+    POSTGRES_DB: str = "pmtool"
     SQLALCHEMY_DATABASE_URI: Optional[str] = None
 
     @property
