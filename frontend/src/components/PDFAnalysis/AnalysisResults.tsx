@@ -15,6 +15,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   tasks,
   totalEstimatedHours,
   riskFactors,
+  documentAnalysis,
   confidenceAnalysis,
 }) => {
   return (
@@ -73,21 +74,21 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               <div className="w-24 bg-gray-200 rounded-full h-2">
                 <div
                   className={`h-2 rounded-full ${
-                    confidenceAnalysis.overall_confidence >= 0.8
+                    (confidenceAnalysis?.overall_confidence || 0) >= 0.8
                       ? 'bg-green-500'
-                      : confidenceAnalysis.overall_confidence >= 0.6
+                      : (confidenceAnalysis?.overall_confidence || 0) >= 0.6
                       ? 'bg-yellow-500'
                       : 'bg-red-500'
                   }`}
-                  style={{ width: `${Math.round(confidenceAnalysis.overall_confidence * 100)}%` }}
+                  style={{ width: `${Math.round((confidenceAnalysis?.overall_confidence || 0) * 100)}%` }}
                 />
               </div>
               <span className="ml-2 text-sm text-gray-600">
-                {Math.round(confidenceAnalysis.overall_confidence * 100)}%
+                {Math.round((confidenceAnalysis?.overall_confidence || 0) * 100)}%
               </span>
             </div>
           </div>
-          {Object.entries(confidenceAnalysis.accuracy_factors).map(([key, value]) => (
+          {confidenceAnalysis?.accuracy_factors && Object.entries(confidenceAnalysis.accuracy_factors).map(([key, value]) => (
             <div key={key}>
               <p className="text-sm font-medium text-gray-500 capitalize">
                 {key.replace(/_/g, ' ')}
@@ -192,11 +193,11 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         </div>
       )}
 
-      {confidenceAnalysis.improvement_suggestions.length > 0 && (
+      {confidenceAnalysis?.improvement_suggestions && confidenceAnalysis.improvement_suggestions.length > 0 && (
         <div className="bg-white shadow rounded-lg p-6">
           <h4 className="text-md font-medium text-gray-900 mb-4">Verbesserungsvorschläge</h4>
           <div className="space-y-3">
-            {confidenceAnalysis.improvement_suggestions.map((suggestion, index) => (
+            {confidenceAnalysis?.improvement_suggestions?.map((suggestion, index) => (
               <div key={index} className="flex items-start">
                 <span className="flex-shrink-0 h-5 w-5 text-blue-500">
                   💡

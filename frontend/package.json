@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "build:prod": "tsc -b && vite build --mode production",
+    "build": "tsc && vite build",
+    "build:prod": "tsc && vite build --mode production",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "jest",
+    "type-check": "tsc --noEmit",
     "test:watch": "jest --watch"
   },
   "dependencies": {
@@ -75,7 +76,7 @@
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.10.7",
+    "@types/node": "^22.10.10",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@types/testing-library__jest-dom": "^6.0.0",

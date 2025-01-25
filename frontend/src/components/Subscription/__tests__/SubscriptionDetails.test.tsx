@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { Subscription } from '../../../types/subscription';
+import { SubscriptionStatus } from '../../../types/subscription';
 import SubscriptionDetails from '../SubscriptionDetails';
 
 describe('SubscriptionDetails', () => {
@@ -11,7 +11,7 @@ describe('SubscriptionDetails', () => {
     packageId: 1,
     packageType: 'team' as const,
     projectLimit: 10,
-    status: 'active' as const,
+    status: 'active' as SubscriptionStatus,
     amount: 119.0,
     interval: '3 months',
     startDate: '2024-01-01T00:00:00Z',
@@ -54,8 +54,8 @@ describe('SubscriptionDetails', () => {
   });
 
   it('shows cancel button only for active subscriptions', () => {
-    const activeSubscription = { ...mockSubscription, status: 'active' };
-    const cancelledSubscription = { ...mockSubscription, status: 'cancelled' };
+    const activeSubscription = { ...mockSubscription, status: 'active' as SubscriptionStatus };
+    const cancelledSubscription = { ...mockSubscription, status: 'cancelled' as SubscriptionStatus };
 
     // Test with active subscription
     const { rerender } = render(
