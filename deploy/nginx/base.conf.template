@@ -1,0 +1,4 @@
+# Base configuration template
+# All specific values should be configured through environment variables
+include conf.d/*.conf;
+include sites-enabled/*.conf;

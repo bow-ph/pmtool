@@ -1,0 +1,3 @@
+# Site configuration template
+# All values should be provided through environment configuration
+include site-config/*.conf;
