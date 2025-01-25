@@ -1,0 +1,25 @@
+#!/bin/bash
+set -e
+
+# Load environment configuration
+source __ENV_FILE__
+
+# Required environment variables check
+: "${POSTGRES_DB:?Database configuration required}"
+: "${POSTGRES_USER:?User configuration required}"
+: "${POSTGRES_PASSWORD:?Password configuration required}"
+: "${POSTGRES_HOST:?Host configuration required}"
+
+# Install dependencies
+__INSTALL_DEPENDENCIES__
+
+# Configure database
+__CONFIGURE_DATABASE__
+
+# Setup permissions
+__SETUP_PERMISSIONS__
+
+# Configure network access
+__CONFIGURE_NETWORK__
+
+echo "PostgreSQL setup completed"
