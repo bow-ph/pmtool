@@ -1,18 +1,23 @@
 from typing import Dict, List, Optional
 import os
-from openai import OpenAI, APIError, RateLimitError
+import logging
+from openai import AsyncOpenAI, APIError, RateLimitError
 from fastapi import HTTPException
+
+logger = logging.getLogger(__name__)
 
 class OpenAIService:
     """Service for handling OpenAI API interactions"""
     
     def __init__(self):
         """Initialize the OpenAI service with API key from environment"""
-        self.api_key = os.getenv("Open_AI_API")
+        self.api_key = os.getenv("Open_AI_API") or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
-            raise ValueError("OpenAI API key not found in environment variables")
+            raise ValueError("OpenAI API key not found in environment variables (checked Open_AI_API and OPENAI_API_KEY)")
+        
+        logger.debug("OpenAI service initialized successfully")
             
-        self.client = OpenAI(
+        self.client = AsyncOpenAI(
             api_key=self.api_key,
             timeout=60.0,
             max_retries=2,
@@ -30,7 +35,8 @@ class OpenAIService:
             Dict: Contains extracted tasks and their time estimates
         """
         try:
-            response = await self.client.chat.completions.create(
+            logger.debug("Starting OpenAI analysis")
+            completion = await self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": """You are a project management assistant specialized in analyzing project documents and extracting tasks with time estimates. You have expertise in identifying document types and understanding their context. Format your response as JSON with the following structure:
@@ -73,7 +79,14 @@ class OpenAIService:
                 ],
                 response_format={ "type": "json_object" }
             )
-            return response.choices[0].message.content
+            logger.debug("OpenAI analysis completed successfully")
+            
+            # Extract the content from the completion response
+            if hasattr(completion.choices[0].message, 'content'):
+                return completion.choices[0].message.content
+            else:
+                logger.error("Unexpected response format from OpenAI")
+                raise ValueError("Unexpected response format from OpenAI")
         except RateLimitError as e:
             raise HTTPException(
                 status_code=429,
@@ -98,13 +111,14 @@ class OpenAIService:
             Dict: Contains financial impact analysis and recommendations
         """
         try:
+            logger.debug("Starting financial impact analysis")
             # Prepare the data for OpenAI
             context = {
                 "project_stats": project_stats,
                 "tasks": tasks
             }
             
-            response = await self.client.chat.completions.create(
+            completion = await self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": """You are a project management advisor specialized in financial and time impact analysis. Format your response as JSON with the following structure:
@@ -131,7 +145,13 @@ class OpenAIService:
                 ],
                 response_format={ "type": "json_object" }
             )
-            return response.choices[0].message.content
+            logger.debug("Financial impact analysis completed successfully")
+            
+            if hasattr(completion.choices[0].message, 'content'):
+                return completion.choices[0].message.content
+            else:
+                logger.error("Unexpected response format from OpenAI")
+                raise ValueError("Unexpected response format from OpenAI")
         except RateLimitError:
             raise HTTPException(status_code=429, detail="OpenAI API rate limit exceeded")
         except APIError as e:
@@ -149,12 +169,13 @@ class OpenAIService:
             Dict: Contains validation results and suggestions
         """
         try:
+            logger.debug("Starting time estimates validation")
             context = {
                 "tasks": tasks,
                 "historical_data": historical_data
             }
             
-            response = await self.client.chat.completions.create(
+            completion = await self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": """You are a project estimation validator. Format your response as JSON with the following structure:
@@ -177,7 +198,13 @@ class OpenAIService:
                 ],
                 response_format={ "type": "json_object" }
             )
-            return response.choices[0].message.content
+            logger.debug("Time estimates validation completed successfully")
+            
+            if hasattr(completion.choices[0].message, 'content'):
+                return completion.choices[0].message.content
+            else:
+                logger.error("Unexpected response format from OpenAI")
+                raise ValueError("Unexpected response format from OpenAI")
         except RateLimitError:
             raise HTTPException(status_code=429, detail="OpenAI API rate limit exceeded")
         except APIError as e:
