@@ -54,8 +54,8 @@ describe('SubscriptionDetails', () => {
   });
 
   it('shows cancel button only for active subscriptions', () => {
-    const activeSubscription = { ...mockSubscription, status: 'active' };
-    const cancelledSubscription = { ...mockSubscription, status: 'cancelled' };
+    const activeSubscription = { ...mockSubscription, status: 'active' as const };
+    const cancelledSubscription = { ...mockSubscription, status: 'cancelled' as const };
 
     // Test with active subscription
     const { rerender } = render(
