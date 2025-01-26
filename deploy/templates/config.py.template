@@ -1,0 +1,50 @@
+from pydantic_settings import BaseSettings
+from typing import List, Optional
+
+class Settings(BaseSettings):
+    # Database Configuration
+    database_name: str = "pmtool"
+    database_user: str = "pmtool"
+    database_password: str
+    database_host: str = "localhost"
+
+    # Redis Configuration
+    redis_url: str = "redis://localhost:6379"
+    redis_password: Optional[str] = None
+
+    # CalDAV Configuration
+    caldav_url: str = "http://localhost:5232"
+    caldav_public_url: str = "https://docuplanai.com/caldav"
+
+    # API Keys
+    openai_api_key: str
+    mollie_test_api_key: str
+    mollie_live_api_key: str
+    sendgrid_api_key: str
+
+    # Application URLs
+    frontend_url: str = "https://docuplanai.com"
+    backend_url: str = "https://admin.docuplanai.com"
+
+    # Email Configuration
+    emails_from_email: str = "noreply@docuplanai.com"
+    emails_from_name: str = "DocuPlanAI"
+
+    # JWT Configuration
+    jwt_secret: str
+
+    # Service Configuration
+    debug: bool = False
+    allowed_hosts: List[str] = ["admin.docuplanai.com", "localhost"]
+    cors_origins: List[str] = ["https://docuplanai.com", "http://localhost:3000"]
+
+    @property
+    def database_url(self) -> str:
+        return f"postgresql://{self.database_user}:{self.database_password}@{self.database_host}/{self.database_name}"
+
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": True
+    }
+
+settings = Settings()
