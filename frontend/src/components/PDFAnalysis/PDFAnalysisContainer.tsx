@@ -21,11 +21,11 @@ const PDFAnalysisContainer: React.FC<PDFAnalysisContainerProps> = ({ projectId }
       
       {analysisResult && (
         <AnalysisResults
-          tasks={analysisResult.tasks ?? []}
-          totalEstimatedHours={analysisResult.total_estimated_hours ?? 0}
-          riskFactors={analysisResult.risk_factors ?? []}
-          documentAnalysis={analysisResult.document_analysis ?? undefined}
-          confidenceAnalysis={analysisResult.confidence_analysis ?? undefined}
+          tasks={analysisResult?.tasks ?? []}
+          totalEstimatedHours={analysisResult?.total_estimated_hours ?? 0}
+          riskFactors={analysisResult?.risk_factors ?? []}
+          documentAnalysis={analysisResult?.document_analysis}
+          confidenceAnalysis={analysisResult?.confidence_analysis}
         />
       )}
     </div>

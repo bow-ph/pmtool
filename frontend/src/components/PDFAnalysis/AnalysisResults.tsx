@@ -18,7 +18,13 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   documentAnalysis,
   confidenceAnalysis,
 }) => {
-  if (!confidenceAnalysis?.overall_confidence || !documentAnalysis?.type) {
+  // Early return if required data is missing
+  if (!tasks?.length || !documentAnalysis || !confidenceAnalysis) {
+    return null;
+  }
+
+  // Ensure all required properties exist
+  if (!documentAnalysis.clarity_score || !documentAnalysis.type || !confidenceAnalysis.overall_confidence) {
     return null;
   }
 
@@ -29,15 +35,15 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         <div className={cn("grid grid-cols-2 gap-4 mb-4")}>
           <div>
             <p className={cn("text-sm font-medium text-gray-500")}>Dokumenttyp</p>
-            <p className={cn("mt-1 text-sm text-gray-900 capitalize")}>{documentAnalysis.type || 'Unbekannt'}</p>
+            <p className={cn("mt-1 text-sm text-gray-900 capitalize")}>{documentAnalysis?.type || 'Unbekannt'}</p>
           </div>
           <div>
             <p className={cn("text-sm font-medium text-gray-500")}>Kundentyp</p>
-            <p className={cn("mt-1 text-sm text-gray-900 capitalize")}>{documentAnalysis.client_type || 'Unbekannt'}</p>
+            <p className={cn("mt-1 text-sm text-gray-900 capitalize")}>{documentAnalysis?.client_type || 'Unbekannt'}</p>
           </div>
           <div>
             <p className={cn("text-sm font-medium text-gray-500")}>Komplexität</p>
-            <p className={cn("mt-1 text-sm text-gray-900 capitalize")}>{documentAnalysis.complexity_level || 'Mittel'}</p>
+            <p className={cn("mt-1 text-sm text-gray-900 capitalize")}>{documentAnalysis?.complexity_level || 'Mittel'}</p>
           </div>
           <div>
             <p className={cn("text-sm font-medium text-gray-500")}>Dokumentklarheit</p>
@@ -88,7 +94,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               </span>
             </div>
           </div>
-          {Object.entries(confidenceAnalysis.accuracy_factors).map(([key, value]) => (
+          {Object.entries(confidenceAnalysis.accuracy_factors || {}).map(([key, value]) => (
             <div key={key}>
               <p className={cn("text-sm font-medium text-gray-500 capitalize")}>
                 {key.replace(/_/g, ' ')}
@@ -192,7 +198,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         <div className={cn("bg-white shadow rounded-lg p-6")}>
           <h4 className={cn("text-md font-medium text-gray-900 mb-4")}>Verbesserungsvorschläge</h4>
           <div className={cn("space-y-3")}>
-            {confidenceAnalysis.improvement_suggestions.map((suggestion, index) => (
+            {confidenceAnalysis.improvement_suggestions?.map((suggestion, index) => (
               <div key={index} className={cn("flex items-start")}>
                 <span className={cn("flex-shrink-0 h-5 w-5 text-blue-500")}>
                   💡

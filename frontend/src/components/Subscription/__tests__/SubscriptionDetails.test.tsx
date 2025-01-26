@@ -54,7 +54,7 @@ describe('SubscriptionDetails', () => {
   });
 
   it('shows cancel button only for active subscriptions', () => {
-    const activeSubscription = mockSubscription;  // Already has status: 'active'
+    const activeSubscription = { ...mockSubscription };  // Create a new object to avoid mutations
     const cancelledSubscription = { ...mockSubscription, status: 'cancelled' as const };
 
     // Test with active subscription
