@@ -1,7 +1,7 @@
 import React from 'react';
 import { Task } from '../../types/api';
 import { PdfAnalysisResponse } from '../../types/api';
-import { cn } from '../../lib/utils';
+import { cn } from '../../utils';
 
 interface AnalysisResultsProps {
   tasks: Task[];
@@ -18,7 +18,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   documentAnalysis,
   confidenceAnalysis,
 }) => {
-  if (!confidenceAnalysis || !documentAnalysis) {
+  if (!confidenceAnalysis?.overall_confidence || !documentAnalysis?.type) {
     return null;
   }
 

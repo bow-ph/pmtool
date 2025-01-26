@@ -29,7 +29,7 @@
     "noUncheckedSideEffectImports": true,
 
     /* Testing */
-    "types": ["jest", "@testing-library/jest-dom", "node"],
+    "types": ["jest", "node", "./src/types/jest/testing-library__jest-dom"],
     "esModuleInterop": true
   },
   "include": ["src"]
