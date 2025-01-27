@@ -13,6 +13,7 @@ export interface User {
   shipping_address?: string;
   phone_number?: string;
   contact_person?: string;
+  notes?: string;
   created_at: string;
   updated_at?: string;
 }
