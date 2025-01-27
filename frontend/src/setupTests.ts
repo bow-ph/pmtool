@@ -37,7 +37,16 @@ global.ResizeObserver = class ResizeObserver {
 };
 
 // Mock import.meta
-(global as any).import = {
+interface ImportMeta {
+  meta: {
+    env: {
+      VITE_API_URL: string;
+      MODE: string;
+    };
+  };
+}
+
+(global as { import: ImportMeta }).import = {
   meta: {
     env: {
       VITE_API_URL: 'http://localhost:8000',

@@ -43,7 +43,7 @@ const TodoList: React.FC<TodoListProps> = ({ tasks, onStatusChange }) => {
               {onStatusChange && task.id && (
                 <select
                   value={task.status}
-                  onChange={(e) => onStatusChange(task.id!, e.target.value as any)}
+                  onChange={(e) => onStatusChange(task.id!, e.target.value as 'pending' | 'in_progress' | 'completed')}
                   className={`ml-4 text-sm rounded-full px-2.5 py-0.5 ${getStatusColor(
                     task.status
                   )}`}

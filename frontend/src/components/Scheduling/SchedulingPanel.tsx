@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../api/client';
 import { Schedule, ScheduleValidation } from '../../types/scheduling';
@@ -25,9 +25,9 @@ const SchedulingPanel: React.FC<SchedulingPanelProps> = ({ projectId }) => {
       setSchedule(scheduleData);
       validateSchedule(scheduleData.schedule);
     }
-  }, [scheduleData]);
+  }, [scheduleData, projectId]);
 
-  const validateSchedule = async (scheduleData: Schedule['schedule']) => {
+  const validateSchedule = useCallback(async (scheduleData: Schedule['schedule']) => {
     try {
       const response = await apiClient.post(
         `/v1/scheduling/projects/${projectId}/validate-schedule`,
@@ -37,7 +37,7 @@ const SchedulingPanel: React.FC<SchedulingPanelProps> = ({ projectId }) => {
     } catch (error) {
       console.error('Error validating schedule:', error);
     }
-  };
+  }, [projectId]);
 
   if (isLoading) {
     return (
