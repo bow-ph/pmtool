@@ -10,7 +10,9 @@ from app.api.v1.endpoints import (
     scheduling,
     task_sync,
     todo,
+    tasks,
     health,
+    projects,
 )
 
 api_router = APIRouter()
@@ -25,4 +27,6 @@ api_router.include_router(packages.router, prefix="/packages", tags=["packages"]
 api_router.include_router(task_sync.router, prefix="/task-sync", tags=["task-sync"])
 api_router.include_router(scheduling.router, prefix="/scheduling", tags=["scheduling"])
 api_router.include_router(todo.router, prefix="/todo", tags=["todo"], include_in_schema=True)
-api_router.include_router(health.router, tags=["health"])
+api_router.include_router(tasks.router, prefix="/tasks", tags=["tasks"])
+api_router.include_router(projects.router, prefix="/projects", tags=["projects"])
+api_router.include_router(health.router)
