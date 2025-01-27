@@ -35,7 +35,7 @@ const ProjectAnalysis = () => {
           {analysisResults && (
             <div className="mt-8">
               <AnalysisResults
-                tasks={analysisResults.tasks}
+                tasks={analysisResults.tasks.map(task => ({ ...task, title: task.description }))}
                 totalEstimatedHours={analysisResults.total_estimated_hours}
                 riskFactors={analysisResults.risk_factors}
                 documentAnalysis={analysisResults.document_analysis}
