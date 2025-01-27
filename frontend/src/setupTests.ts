@@ -1,13 +1,9 @@
 import '@testing-library/jest-dom';
+import type { Matchers } from '@testing-library/jest-dom/matchers';
 
-declare module '@testing-library/jest-dom' {
-  export interface Matchers<R> {
-    toBeInTheDocument(): R;
-    toHaveClass(className: string): R;
-    toBeVisible(): R;
-    toBeDisabled(): R;
-    toHaveAttribute(attr: string, value?: string): R;
-    toHaveTextContent(text: string | RegExp): R;
+declare global {
+  namespace jest {
+    interface Matchers<R> extends Matchers<R> {}
   }
 }
 import { jest } from '@jest/globals';
