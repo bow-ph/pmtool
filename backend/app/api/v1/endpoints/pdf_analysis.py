@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from typing import Dict, Any
+from typing import Dict, Any, List
 import aiofiles
 import tempfile
 import os
@@ -12,6 +12,21 @@ import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+@router.get("/{project_id}/proactive-hints")
+async def get_proactive_hints(
+    project_id: int,
+    db: Session = Depends(get_db)
+) -> List[Dict[str, Any]]:
+    """Get proactive hints for a project based on PDF analysis"""
+    try:
+        logger.debug(f"Fetching proactive hints for project {project_id}")
+        pdf_service = PDFAnalysisService(db)
+        hints = await pdf_service.get_proactive_hints(project_id)
+        return hints
+    except Exception as e:
+        logger.error(f"Error fetching proactive hints: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/{project_id}/analyze-pdf")
 async def analyze_pdf(

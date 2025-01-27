@@ -38,7 +38,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onEventUpdate }) =>
   const { data: calendarData } = useQuery({
     queryKey: ['calendar', format(monthStart, 'yyyy-MM'), format(monthEnd, 'yyyy-MM')],
     queryFn: async () => {
-      const response = await apiClient.get('/tasks/1/PM%20Tool', {
+      const response = await apiClient.get(`/caldav/tasks/1/PM Tool`, {
         params: {
           start_date: monthStart.toISOString(),
           end_date: monthEnd.toISOString(),
