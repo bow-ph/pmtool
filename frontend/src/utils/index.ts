@@ -4,7 +4,7 @@ export const cn = (...classes: (string | boolean | undefined | null | { [key: st
     .map((cls) => {
       if (typeof cls === 'object' && cls !== null) {
         return Object.entries(cls)
-          .filter(([_, value]) => value)
+          .filter(([, value]) => value)
           .map(([key]) => key)
           .join(' ');
       }
