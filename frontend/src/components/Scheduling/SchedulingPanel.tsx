@@ -11,6 +11,18 @@ const SchedulingPanel: React.FC<SchedulingPanelProps> = ({ projectId }) => {
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [validation, setValidation] = useState<ScheduleValidation | null>(null);
 
+  const validateSchedule = useCallback(async (scheduleData: Schedule['schedule']) => {
+    try {
+      const response = await apiClient.post(
+        `/v1/scheduling/projects/${projectId}/validate-schedule`,
+        { schedule: scheduleData }
+      );
+      setValidation(response.data);
+    } catch (error) {
+      console.error('Error validating schedule:', error);
+    }
+  }, [projectId]);
+
   const { data: scheduleData, isLoading, error } = useQuery({
     queryKey: ['schedule', projectId],
     queryFn: async () => {
@@ -26,18 +38,6 @@ const SchedulingPanel: React.FC<SchedulingPanelProps> = ({ projectId }) => {
       validateSchedule(scheduleData.schedule);
     }
   }, [scheduleData, projectId, validateSchedule]);
-
-  const validateSchedule = useCallback(async (scheduleData: Schedule['schedule']) => {
-    try {
-      const response = await apiClient.post(
-        `/v1/scheduling/projects/${projectId}/validate-schedule`,
-        { schedule: scheduleData }
-      );
-      setValidation(response.data);
-    } catch (error) {
-      console.error('Error validating schedule:', error);
-    }
-  }, [projectId]);
 
   if (isLoading) {
     return (
