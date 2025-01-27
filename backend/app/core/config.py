@@ -1,11 +1,16 @@
 from pydantic_settings import BaseSettings
 from typing import List, Optional
+import os
 
 class Settings(BaseSettings):
+    # Project Configuration
+    PROJECT_NAME: str = "DocuPlanAI"
+    API_V1_STR: str = "/api/v1"
+    
     # Database Configuration
-    DATABASE_NAME: str = "pmtool"
-    DATABASE_USER: str = "pmtool"
-    DATABASE_PASSWORD: str
+    DATABASE_NAME: str = "docuplanai_db"
+    DATABASE_USER: str = "docuplanai"
+    DATABASE_PASSWORD: str = "docuplanai"
     DATABASE_HOST: str = "localhost"
 
     # Redis Configuration
@@ -33,10 +38,28 @@ class Settings(BaseSettings):
     CALDAV_PUBLIC_URL: str = "https://docuplanai.com/caldav"
 
     # API Keys
-    OPENAI_API_KEY: str
-    MOLLIE_TEST_API_KEY: str
-    MOLLIE_LIVE_API_KEY: str
-    SENDGRID_API_KEY: str
+    OPENAI_API_KEY: str = os.environ.get("Open_AI_API", "")
+    MOLLIE_TEST_API_KEY: str = os.environ.get("Mollie___Test_API_Key", "")
+    MOLLIE_LIVE_API_KEY: str = os.environ.get("Mollie___Live_API_Key", "")
+    SENDGRID_API_KEY: str = os.environ.get("Sendgrid___DocuPlanAI", "")
+
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": True,
+        "env_file_encoding": "utf-8",
+        "validate_default": True,
+        "validate_assignment": True,
+        "extra": "allow",
+        "env_prefix": "",
+        "use_enum_values": True,
+        "str_strip_whitespace": True,
+        "protected_namespaces": (),
+        "env_nested_delimiter": "__",
+        "arbitrary_types_allowed": True,
+        "json_encoders": {
+            "datetime": str
+        }
+    }
 
     # Application URLs
     FRONTEND_URL: str = "https://docuplanai.com"
@@ -61,6 +84,10 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
+        # First check for complete DATABASE_URL in environment
+        if os.getenv("DATABASE_URL"):
+            return os.getenv("DATABASE_URL")
+        # Fall back to constructing from components
         return f"postgresql://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}/{self.DATABASE_NAME}"
 
     # Model Config

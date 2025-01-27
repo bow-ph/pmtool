@@ -27,10 +27,15 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
+    "strictNullChecks": true,
 
     /* Testing */
-    "types": ["jest", "node", "./src/types/jest/testing-library__jest-dom"],
-    "esModuleInterop": true
+
+    "types": ["jest", "node"],
+    "typeRoots": ["./node_modules/@types"],
+    "esModuleInterop": true,
+    "skipLibCheck": true
+
   },
   "include": ["src"]
 }

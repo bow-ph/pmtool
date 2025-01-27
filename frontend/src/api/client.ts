@@ -12,11 +12,16 @@ const getBaseUrl = () => {
 };
 
 export const apiClient = axios.create({
-  baseURL: getBaseUrl() || 'https://admin.docuplanai.com',
+  baseURL: getBaseUrl() || 'http://admin.docuplanai.com',
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBwbXRvb2wudGVzdCIsImV4cCI6MTczODMxMjMwNX0.c_9LN8Z2xU9IVa9Ee2-bXxY-vjD8PkKQxCmu--346uY'
+    'Accept': 'application/json',
+    'Origin': 'http://docuplanai.com'
   },
+  withCredentials: true,
+  validateStatus: (status) => {
+    return status >= 200 && status < 500;
+  }
 });
 
 // Create react-query client
@@ -36,4 +41,13 @@ export const endpoints = {
   getMySubscription: () => `/subscriptions/me`,
   checkProjectLimit: () => `/subscriptions/me/project-limit`,
   cancelSubscription: () => `/subscriptions/me/cancel`,
+  getTasks: (projectId: number, startDate: string, endDate: string) => 
+    `/api/v1/todo/list?project_id=${projectId}&start_date=${startDate}&end_date=${endDate}`,
+  updateTask: (taskId: number) => `/api/v1/todo/tasks/${taskId}`,
+  getCalendarTasks: (projectId: number, startDate: string, endDate: string) =>
+    `/api/v1/caldav/tasks/${projectId}/PM%20Tool?start_date=${startDate}&end_date=${endDate}`,
+  packages: () => `/api/v1/packages`,
+  createPackage: () => `/api/v1/packages`,
+  updatePackage: (packageId: number) => `/api/v1/packages/${packageId}`,
+  deletePackage: (packageId: number) => `/api/v1/packages/${packageId}`,
 };

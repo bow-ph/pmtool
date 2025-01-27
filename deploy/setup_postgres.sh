@@ -9,7 +9,7 @@ fi
 # Default values (will be overridden by environment variables if set)
 DATABASE_NAME=${DATABASE_NAME:-"pmtool"}
 DATABASE_USER=${DATABASE_USER:-"pmtool"}
-DATABASE_PASSWORD=${DATABASE_PASSWORD:-$(openssl rand -hex 16)}
+DATABASE_PASSWORD=${DATABASE_PASSWORD:-"pmtool"}
 DATABASE_HOST=${DATABASE_HOST:-"localhost"}
 
 # Install PostgreSQL if not already installed
@@ -32,13 +32,24 @@ sudo -u postgres psql -v ON_ERROR_STOP=1 << EOF
 DO \$\$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '$DATABASE_USER') THEN
-        CREATE USER $DATABASE_USER WITH PASSWORD '$DATABASE_PASSWORD';
+        CREATE USER $DATABASE_USER WITH PASSWORD '$DATABASE_PASSWORD' CREATEDB;
     ELSE
         ALTER USER $DATABASE_USER WITH PASSWORD '$DATABASE_PASSWORD';
+        ALTER USER $DATABASE_USER WITH CREATEDB;
     END IF;
 END
 \$\$;
 EOF
+
+# Update pg_hba.conf to allow password authentication
+echo "Configuring PostgreSQL authentication..."
+sudo sed -i 's/local.*all.*all.*peer/local   all             all                                     md5/' /etc/postgresql/*/main/pg_hba.conf
+sudo sed -i 's/host.*all.*all.*127.0.0.1\/32.*ident/host    all             all             127.0.0.1\/32            md5/' /etc/postgresql/*/main/pg_hba.conf
+
+# Update pg_hba.conf to allow password authentication
+echo "Configuring PostgreSQL authentication..."
+sudo sed -i 's/local.*all.*all.*peer/local   all             all                                     md5/' /etc/postgresql/*/main/pg_hba.conf
+sudo sed -i 's/host.*all.*all.*127.0.0.1\/32.*ident/host    all             all             127.0.0.1\/32            md5/' /etc/postgresql/*/main/pg_hba.conf
 
 # Create database
 echo "Creating database..."
