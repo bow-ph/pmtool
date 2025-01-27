@@ -1,12 +1,18 @@
 import '@testing-library/jest-dom';
-import type { Matchers } from '@testing-library/jest-dom/matchers';
+import { jest } from '@jest/globals';
 
 declare global {
   namespace jest {
-    interface Matchers<R> extends Matchers<R> {}
+    interface Matchers<R = void> {
+      toBeInTheDocument(): R;
+      toHaveClass(className: string): R;
+      toBeVisible(): R;
+      toBeDisabled(): R;
+      toHaveAttribute(attr: string, value?: string): R;
+      toHaveTextContent(text: string | RegExp): R;
+    }
   }
 }
-import { jest } from '@jest/globals';
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -31,16 +37,18 @@ global.ResizeObserver = class ResizeObserver {
 };
 
 // Mock import.meta
-interface ImportMeta {
-  meta: {
-    env: {
-      VITE_API_URL: string;
-      MODE: string;
+declare global {
+  var import: {
+    meta: {
+      env: {
+        VITE_API_URL: string;
+        MODE: string;
+      };
     };
   };
 }
 
-(global as { import: ImportMeta }).import = {
+global.import = {
   meta: {
     env: {
       VITE_API_URL: 'http://localhost:8000',
