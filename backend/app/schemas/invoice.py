@@ -25,3 +25,6 @@ class Invoice(InvoiceBase):
 
     class Config:
         from_attributes = True
+
+class InvoiceResponse(Invoice):
+    pass
