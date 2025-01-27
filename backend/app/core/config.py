@@ -5,12 +5,12 @@ import os
 class Settings(BaseSettings):
     # Project Configuration
     PROJECT_NAME: str = "DocuPlanAI"
-    API_V1_STR: str = "/v1"
+    API_V1_STR: str = "/api/v1"
     
     # Database Configuration
-    DATABASE_NAME: str = "pmtool"
-    DATABASE_USER: str = "pmtool"
-    DATABASE_PASSWORD: str
+    DATABASE_NAME: str = "docuplanai_db"
+    DATABASE_USER: str = "docuplanai"
+    DATABASE_PASSWORD: str = "docuplanai"
     DATABASE_HOST: str = "localhost"
 
     # Redis Configuration
@@ -84,6 +84,10 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
+        # First check for complete DATABASE_URL in environment
+        if os.getenv("DATABASE_URL"):
+            return os.getenv("DATABASE_URL")
+        # Fall back to constructing from components
         return f"postgresql://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}/{self.DATABASE_NAME}"
 
     # Model Config
