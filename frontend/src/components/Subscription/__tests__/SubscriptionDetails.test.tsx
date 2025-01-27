@@ -3,13 +3,13 @@ import { SubscriptionStatus } from '../../../types/subscription';
 import SubscriptionDetails from '../SubscriptionDetails';
 
 describe('SubscriptionDetails', () => {
-  const mockSubscription = {
+  const mockSubscription: Subscription = {
     id: 1,
     userId: 1,
     mollieId: 'sub_test',
     customerId: 'cust_test',
     packageId: 1,
-    packageType: 'team' as const,
+    packageType: 'team',
     projectLimit: 10,
     status: 'active' as SubscriptionStatus,
     amount: 119.0,
@@ -54,8 +54,10 @@ describe('SubscriptionDetails', () => {
   });
 
   it('shows cancel button only for active subscriptions', () => {
+
     const activeSubscription = { ...mockSubscription, status: 'active' as SubscriptionStatus };
     const cancelledSubscription = { ...mockSubscription, status: 'cancelled' as SubscriptionStatus };
+
 
     // Test with active subscription
     const { rerender } = render(
@@ -92,9 +94,9 @@ describe('SubscriptionDetails', () => {
   });
 
   it('displays unlimited projects for enterprise subscription without limit', () => {
-    const enterpriseSubscription = {
+    const enterpriseSubscription: Subscription = {
       ...mockSubscription,
-      packageType: 'enterprise' as const,
+      packageType: 'enterprise',
       projectLimit: null,
       packageId: 2,
       createdAt: '2024-01-01T00:00:00Z'

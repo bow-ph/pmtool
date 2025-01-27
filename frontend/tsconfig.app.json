@@ -30,10 +30,12 @@
     "strictNullChecks": true,
 
     /* Testing */
+
     "types": ["jest", "node"],
     "typeRoots": ["./node_modules/@types"],
     "esModuleInterop": true,
     "skipLibCheck": true
+
   },
   "include": ["src"]
 }
