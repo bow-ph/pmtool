@@ -37,20 +37,16 @@ global.ResizeObserver = class ResizeObserver {
 };
 
 // Mock import.meta
-/// <reference types="vite/client" />
-
-declare module 'vite/client' {
-  interface ImportMetaEnv {
-    readonly VITE_API_URL: string;
-    readonly MODE: string;
-  }
-}
-
-(global as any).import = {
-  meta: {
-    env: {
-      VITE_API_URL: 'http://localhost:8000',
-      MODE: 'test'
-    }
+// Mock global import.meta
+const mockImportMeta = {
+  env: {
+    VITE_API_URL: 'http://localhost:8000',
+    MODE: 'test'
   }
 };
+
+Object.defineProperty(global, 'import', {
+  value: { meta: mockImportMeta },
+  writable: true,
+  configurable: true
+});
