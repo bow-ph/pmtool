@@ -41,4 +41,8 @@ export const endpoints = {
   getPackages: () => '/packages',
   getSubscriptions: () => '/admin/subscriptions',
   getInvoices: () => '/admin/invoices',
+  // User subscription endpoints
+  getMySubscription: () => '/subscriptions/me',
+  checkProjectLimit: () => '/subscriptions/me/project-limit',
+  cancelSubscription: () => '/subscriptions/me/cancel',
 };
