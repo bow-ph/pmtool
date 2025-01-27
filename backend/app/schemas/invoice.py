@@ -26,6 +26,7 @@ class Invoice(InvoiceBase):
     class Config:
         from_attributes = True
 
+
 class InvoiceResponse(BaseModel):
     id: int
     invoice_number: str
@@ -40,3 +41,4 @@ class InvoiceResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
