@@ -37,14 +37,12 @@ global.ResizeObserver = class ResizeObserver {
 };
 
 // Mock import.meta
-interface ImportMetaEnv {
-  VITE_API_URL: string;
-  MODE: string;
-}
+/// <reference types="vite/client" />
 
-declare global {
-  interface ImportMeta {
-    readonly env: ImportMetaEnv;
+declare module 'vite/client' {
+  interface ImportMetaEnv {
+    readonly VITE_API_URL: string;
+    readonly MODE: string;
   }
 }
 
