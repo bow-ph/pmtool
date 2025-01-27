@@ -33,6 +33,7 @@ export interface Invoice {
 // Project Analysis Types
 export interface Task {
   id?: number;
+  title: string;
   description: string;
   estimated_hours: number;
   actual_hours?: number;

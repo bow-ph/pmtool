@@ -21,7 +21,7 @@ const PDFAnalysisContainer: React.FC<PDFAnalysisContainerProps> = ({ projectId }
       
       {analysisResult && (
         <AnalysisResults
-          tasks={analysisResult?.tasks ?? []}
+          tasks={analysisResult?.tasks.map(task => ({ ...task, title: task.description })) ?? []}
           totalEstimatedHours={analysisResult?.total_estimated_hours ?? 0}
           riskFactors={analysisResult?.risk_factors ?? []}
           documentAnalysis={analysisResult?.document_analysis}
