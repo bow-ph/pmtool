@@ -25,7 +25,7 @@ const SchedulingPanel: React.FC<SchedulingPanelProps> = ({ projectId }) => {
       setSchedule(scheduleData);
       validateSchedule(scheduleData.schedule);
     }
-  }, [scheduleData, projectId]);
+  }, [scheduleData, projectId, validateSchedule]);
 
   const validateSchedule = useCallback(async (scheduleData: Schedule['schedule']) => {
     try {

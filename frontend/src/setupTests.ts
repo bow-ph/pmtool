@@ -2,15 +2,13 @@ import '@testing-library/jest-dom';
 import { jest } from '@jest/globals';
 
 declare global {
-  namespace jest {
-    interface Matchers<R = void> {
-      toBeInTheDocument(): R;
-      toHaveClass(className: string): R;
-      toBeVisible(): R;
-      toBeDisabled(): R;
-      toHaveAttribute(attr: string, value?: string): R;
-      toHaveTextContent(text: string | RegExp): R;
-    }
+  interface JestMatchers<R = void> {
+    toBeInTheDocument(): R;
+    toHaveClass(className: string): R;
+    toBeVisible(): R;
+    toBeDisabled(): R;
+    toHaveAttribute(attr: string, value?: string): R;
+    toHaveTextContent(text: string | RegExp): R;
   }
 }
 
