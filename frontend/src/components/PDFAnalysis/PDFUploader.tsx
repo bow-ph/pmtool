@@ -75,7 +75,7 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({
         }`}
     >
       <input {...getInputProps()} />
-      {uploadMutation.isLoading ? (
+      {uploadMutation.status === 'loading' ? ( // Status statt isLoading
         <div className="flex flex-col items-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
           <p className="text-gray-600">PDF wird hochgeladen...</p>
@@ -92,7 +92,7 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({
           )}
         </div>
       )}
-      {uploadMutation.isError && (
+      {uploadMutation.status === 'error' && (
         <p className="mt-2 text-red-500 text-sm">
           Fehler beim Upload: {(uploadMutation.error as Error)?.message || 'Unbekannter Fehler'}
         </p>
