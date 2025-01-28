@@ -1,26 +1,66 @@
-import { AxiosInstance } from 'axios';
 import axios from 'axios';
 import { QueryClient } from '@tanstack/react-query';
 
-export const apiClient: AxiosInstance = axios.create({
-  baseURL: 'http://localhost:8000',
+const getBaseUrl = () => {
+  try {
+    const url = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    return url.replace(/\/$/, ''); // Entfernt abschließenden Slash
+  } catch (error) {
+    console.error('Fehler beim Abrufen der Base URL:', error);
+    return 'http://localhost:8000';
+  }
+};
+
+export const apiClient = axios.create({
+  baseURL: `${getBaseUrl()}/api/v1`,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
+// Logging für Anfragen und Antworten
+apiClient.interceptors.request.use((request) => {
+  console.log('API Request:', request);
+  return request;
+});
+
+apiClient.interceptors.response.use(
+  (response) => {
+    console.log('API Response:', response);
+    return response;
+  },
+  (error) => {
+    console.error('API Error:', error.response || error.message);
+    return Promise.reject(error);
+  }
+);
+
+// React Query Client
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: false,
-      staleTime: 0,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 Minuten
+      onError: (error) => {
+        console.error('Query Error:', error);
+      },
     },
   },
 });
 
 export const endpoints = {
-  analyzePdf: (projectId: number) => `/v1/pdf-analysis/projects/${projectId}/analyze`,
-  schedule: (projectId: number) => `/v1/scheduling/projects/${projectId}/schedule`,
-  validateSchedule: (projectId: number) => `/v1/scheduling/projects/${projectId}/validate-schedule`,
-  availableSlots: (projectId: number) => `/v1/scheduling/projects/${projectId}/available-slots`,
+  analyzePdf: (projectId: number) => `/projects/${projectId}/analyze-pdf`,
+  getProactiveHints: (projectId: number) => `/projects/${projectId}/proactive-hints`,
+  getTasks: () => '/tasks',
+  getTask: (taskId: number) => `/tasks/${taskId}`,
+  createTask: () => '/tasks',
+  updateTask: (taskId: number) => `/tasks/${taskId}`,
+  deleteTask: (taskId: number) => `/tasks/${taskId}`,
+  getPackages: () => '/packages',
+  getSubscriptions: () => '/admin/subscriptions',
+  getInvoices: () => '/admin/invoices',
+  getMySubscription: () => '/subscriptions/me',
+  checkProjectLimit: () => '/subscriptions/me/project-limit',
+  cancelSubscription: () => '/subscriptions/me/cancel',
+};
 };

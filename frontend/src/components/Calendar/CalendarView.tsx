@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { format, startOfWeek, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval, parseISO } from 'date-fns';
+import {
+  format,
+  startOfWeek,
+  addDays,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isWithinInterval,
+  parseISO,
+} from 'date-fns';
 import { de } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
-import { CalDAVTask } from '../../types/api';
 import { apiClient } from '../../api/client';
 
 interface CalendarEvent {
@@ -34,11 +42,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onEventUpdate }) =>
     return format(day, 'EEE', { locale: de });
   });
 
-  // Fetch calendar data from CalDAV
-  const { data: calendarData } = useQuery({
+  // Fetch calendar data from API
+  const { data: calendarData, error } = useQuery({
     queryKey: ['calendar', format(monthStart, 'yyyy-MM'), format(monthEnd, 'yyyy-MM')],
     queryFn: async () => {
-      const response = await apiClient.get('/tasks/1/PM%20Tool', {
+      const response = await apiClient.get('/tasks', {
         params: {
           start_date: monthStart.toISOString(),
           end_date: monthEnd.toISOString(),
@@ -48,7 +56,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onEventUpdate }) =>
     },
   });
 
-  // State for merged events and sync status
+  // State for merged events
   const [mergedEvents, setMergedEvents] = useState<CalendarEvent[]>(events);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
 
@@ -56,58 +64,56 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onEventUpdate }) =>
     if (calendarData?.tasks) {
       setSyncStatus('syncing');
       try {
-        const externalEvents: CalendarEvent[] = calendarData.tasks.map((task: CalDAVTask) => ({
-          id: task.uid,
+        const externalEvents: CalendarEvent[] = calendarData.tasks.map((task: any) => ({
+          id: task.id,
           title: task.description,
           start_date: parseISO(task.start_date),
           end_date: parseISO(task.end_date),
-          type: 'task' as const,
+          type: 'task',
           estimated_hours: task.estimated_hours,
-          status: task.status as 'pending' | 'in_progress' | 'completed',
-          priority: task.priority as 'high' | 'medium' | 'low' | undefined,
+          status: task.status,
+          priority: task.priority,
         }));
 
         // Merge external events with local events
         const merged = [...events];
-        externalEvents.forEach((extEvent: CalendarEvent) => {
-          const existingIndex = merged.findIndex(e => e.id === extEvent.id);
+        externalEvents.forEach((extEvent) => {
+          const existingIndex = merged.findIndex((e) => e.id === extEvent.id);
           if (existingIndex >= 0) {
             // Update existing event
             merged[existingIndex] = { ...merged[existingIndex], ...extEvent };
           } else {
-            // Check for conflicts
-            const hasConflict = merged.some(existingEvent =>
-              isWithinInterval(extEvent.start_date, { start: existingEvent.start_date, end: existingEvent.end_date }) ||
-              isWithinInterval(extEvent.end_date, { start: existingEvent.start_date, end: existingEvent.end_date })
-            );
-            
-            if (hasConflict) {
-              console.warn(`Conflict detected for task: ${extEvent.title}`);
-            }
             merged.push(extEvent);
           }
         });
-        
+
         setMergedEvents(merged);
         setSyncStatus('idle');
       } catch (error) {
-        console.error('Error syncing calendar:', error);
+        console.error('Fehler beim Synchronisieren des Kalenders:', error);
         setSyncStatus('error');
       }
     }
   }, [calendarData, events]);
 
   const getEventsForDay = (date: Date) => {
-    return mergedEvents.filter(event => 
+    return mergedEvents.filter((event) =>
       isWithinInterval(date, { start: event.start_date, end: event.end_date })
     );
   };
 
   const checkForOverlap = (event: CalendarEvent) => {
-    return mergedEvents.some(existingEvent => 
-      event.id !== existingEvent.id &&
-      (isWithinInterval(event.start_date, { start: existingEvent.start_date, end: existingEvent.end_date }) ||
-       isWithinInterval(event.end_date, { start: existingEvent.start_date, end: existingEvent.end_date }))
+    return mergedEvents.some(
+      (existingEvent) =>
+        event.id !== existingEvent.id &&
+        (isWithinInterval(event.start_date, {
+          start: existingEvent.start_date,
+          end: existingEvent.end_date,
+        }) ||
+          isWithinInterval(event.end_date, {
+            start: existingEvent.start_date,
+            end: existingEvent.end_date,
+          }))
     );
   };
 
@@ -126,9 +132,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onEventUpdate }) =>
               </div>
             )}
             {syncStatus === 'error' && (
-              <div className="text-sm text-red-600">
-                Fehler bei der Synchronisation
-              </div>
+              <div className="text-sm text-red-600">Fehler bei der Synchronisation</div>
             )}
           </div>
           <div className="flex space-x-2">
@@ -156,41 +160,34 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onEventUpdate }) =>
         {days.map((day) => {
           const dayEvents = getEventsForDay(day);
           const hasOverlap = dayEvents.some(checkForOverlap);
-          
+
           return (
             <div
               key={day.toString()}
-              className={`bg-white p-2 h-32 overflow-y-auto ${
-                format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-                  ? 'bg-blue-50'
-                  : ''
-              } ${hasOverlap ? 'border-l-4 border-yellow-400' : ''}`}
+              className={`bg-white p-2 h-32 overflow-y-auto ${format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'bg-blue-50' : ''
+                } ${hasOverlap ? 'border-l-4 border-yellow-400' : ''}`}
             >
-              <div className="font-medium text-sm text-gray-900">
-                {format(day, 'd')}
-              </div>
+              <div className="font-medium text-sm text-gray-900">{format(day, 'd')}</div>
               {dayEvents.map((event) => (
                 <div
                   key={event.id}
-                  className={`mt-1 px-2 py-1 text-xs rounded-md cursor-pointer transition-colors ${
-                    event.type === 'task'
-                      ? `${
-                          event.status === 'completed'
-                            ? 'bg-green-100 text-green-800'
-                            : event.status === 'in_progress'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`
-                      : event.type === 'meeting'
-                      ? 'bg-purple-100 text-purple-800'
+                  className={`mt-1 px-2 py-1 text-xs rounded-md cursor-pointer transition-colors ${event.type === 'task'
+                      ? `${event.status === 'completed'
+                        ? 'bg-green-100 text-green-800'
+                        : event.status === 'in_progress'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-blue-100 text-blue-800'
+                      }`
                       : 'bg-red-100 text-red-800'
-                  }`}
+                    }`}
                   onClick={() => {
                     if (onEventUpdate && event.type === 'task') {
-                      const newStatus = 
-                        event.status === 'pending' ? 'in_progress' :
-                        event.status === 'in_progress' ? 'completed' :
-                        'pending';
+                      const newStatus =
+                        event.status === 'pending'
+                          ? 'in_progress'
+                          : event.status === 'in_progress'
+                            ? 'completed'
+                            : 'pending';
                       onEventUpdate(event.id, { status: newStatus });
                     }
                   }}
@@ -198,17 +195,18 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onEventUpdate }) =>
                   <div className="flex justify-between items-center">
                     <span>{event.title}</span>
                     {event.estimated_hours && (
-                      <span className="text-xs opacity-75">
-                        {event.estimated_hours}h
-                      </span>
+                      <span className="text-xs opacity-75">{event.estimated_hours}h</span>
                     )}
                   </div>
                   {event.priority && (
-                    <div className={`mt-1 h-1 rounded-full ${
-                      event.priority === 'high' ? 'bg-red-400' :
-                      event.priority === 'medium' ? 'bg-yellow-400' :
-                      'bg-green-400'
-                    }`} />
+                    <div
+                      className={`mt-1 h-1 rounded-full ${event.priority === 'high'
+                          ? 'bg-red-400'
+                          : event.priority === 'medium'
+                            ? 'bg-yellow-400'
+                            : 'bg-green-400'
+                        }`}
+                    />
                   )}
                 </div>
               ))}
