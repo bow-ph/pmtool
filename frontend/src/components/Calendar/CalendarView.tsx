@@ -43,7 +43,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onEventUpdate }) =>
   });
 
   // Fetch calendar data from API
-  const { data: calendarData, error } = useQuery({
+  const { data: calendarData } = useQuery({
     queryKey: ['calendar', format(monthStart, 'yyyy-MM'), format(monthEnd, 'yyyy-MM')],
     queryFn: async () => {
       const response = await apiClient.get('/tasks', {
@@ -89,8 +89,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onEventUpdate }) =>
 
         setMergedEvents(merged);
         setSyncStatus('idle');
-      } catch (error) {
-        console.error('Fehler beim Synchronisieren des Kalenders:', error);
+      } catch (syncError) {
+        console.error('Fehler beim Synchronisieren des Kalenders:', syncError);
         setSyncStatus('error');
       }
     }
