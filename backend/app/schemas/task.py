@@ -5,12 +5,14 @@ from pydantic import BaseModel
 class TaskBase(BaseModel):
     description: str
     estimated_hours: float
-    actual_hours: Optional[float] = None
+    actual_hours: Optional[float] = 0.0  # Standardwert: 0.0
     status: str = "pending"  # pending, in_progress, completed
     project_id: Optional[int] = None
-    priority: Optional[str] = None  # high, medium, low
-    confidence_score: Optional[float] = None  # AI confidence in the estimate (0-1)
+    priority: Optional[str] = "medium"  # Standardwert: medium
+    confidence_score: Optional[float] = 0.0  # Standardwert: 0.0
     confidence_rationale: Optional[str] = None  # Detailed explanation of confidence score
+    
+    
 
 class TaskCreate(TaskBase):
     pass
