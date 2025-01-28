@@ -1,5 +1,13 @@
 import React from 'react';
-import { Task } from '../../types/api';
+
+interface Task {
+  id: number;
+  description: string;
+  estimated_hours: number;
+  actual_hours?: number;
+  status: 'pending' | 'in_progress' | 'completed';
+  confidence_score: number;
+}
 
 interface TodoListProps {
   tasks: Task[];
@@ -24,51 +32,54 @@ const TodoList: React.FC<TodoListProps> = ({ tasks, onStatusChange }) => {
         <h2 className="text-lg font-semibold text-gray-900">Aufgaben</h2>
       </div>
       <div className="divide-y divide-gray-200">
-        {tasks.map((task) => (
-          <div key={task.id} className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">{task.description}</p>
-                <div className="mt-1 flex items-center space-x-2">
-                  <span className="text-sm text-gray-500">
-                    {task.estimated_hours} Stunden geschätzt
-                  </span>
-                  {task.actual_hours && (
+        {tasks.length > 0 ? (
+          tasks.map((task) => (
+            <div key={task.id} className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">{task.description}</p>
+                  <div className="mt-1 flex items-center space-x-2">
                     <span className="text-sm text-gray-500">
-                      • {task.actual_hours} Stunden tatsächlich
+                      {task.estimated_hours} Stunden geschätzt
                     </span>
-                  )}
+                    {task.actual_hours !== undefined && (
+                      <span className="text-sm text-gray-500">
+                        • {task.actual_hours} Stunden tatsächlich
+                      </span>
+                    )}
+                  </div>
                 </div>
+                {onStatusChange && (
+                  <select
+                    value={task.status}
+                    onChange={(e) =>
+                      onStatusChange(task.id, e.target.value as 'pending' | 'in_progress' | 'completed')
+                    }
+                    className={`ml-4 text-sm rounded-full px-2.5 py-0.5 ${getStatusColor(task.status)}`}
+                  >
+                    <option value="pending">Ausstehend</option>
+                    <option value="in_progress">In Bearbeitung</option>
+                    <option value="completed">Abgeschlossen</option>
+                  </select>
+                )}
               </div>
-              {onStatusChange && task.id && (
-                <select
-                  value={task.status}
-                  onChange={(e) => onStatusChange(task.id!, e.target.value as 'pending' | 'in_progress' | 'completed')}
-                  className={`ml-4 text-sm rounded-full px-2.5 py-0.5 ${getStatusColor(
-                    task.status
-                  )}`}
+              <div className="mt-2">
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${task.confidence_score >= 0.8
+                      ? 'bg-green-100 text-green-800'
+                      : task.confidence_score >= 0.6
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}
                 >
-                  <option value="pending">Ausstehend</option>
-                  <option value="in_progress">In Bearbeitung</option>
-                  <option value="completed">Abgeschlossen</option>
-                </select>
-              )}
+                  {Math.round(task.confidence_score * 100)}% Konfidenz
+                </span>
+              </div>
             </div>
-            <div className="mt-2">
-              <span
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  task.confidence_score >= 0.8
-                    ? 'bg-green-100 text-green-800'
-                    : task.confidence_score >= 0.6
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {Math.round(task.confidence_score * 100)}% Konfidenz
-              </span>
-            </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          <div className="p-4 text-center text-sm text-gray-500">Keine Aufgaben verfügbar.</div>
+        )}
       </div>
     </div>
   );
