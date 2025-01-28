@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { PdfAnalysisResponse } from '../../types/api';
+import { PdfAnalysisResponse } from '@/types/api';
 import PDFUploader from './PDFUploader';
 import AnalysisResults from './AnalysisResults';
-import { cn } from '../../utils';
+import { cn } from '@/utils'; // Absoluter Import
 
 interface PDFAnalysisContainerProps {
   projectId: number;
