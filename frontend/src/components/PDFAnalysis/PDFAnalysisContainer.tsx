@@ -14,31 +14,27 @@ const PDFAnalysisContainer: React.FC<PDFAnalysisContainerProps> = ({ projectId }
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
-  // Handle successful analysis completion
   const handleAnalysisComplete = (result: PdfAnalysisResponse) => {
-    setAnalysisResult(result); // Save analysis result
-    setUploadError(null); // Clear previous errors
-    setIsUploading(false); // Reset uploading state
-    setUploadProgress(0); // Reset progress
+    setAnalysisResult(result);
+    setUploadError(null);
+    setIsUploading(false);
+    setUploadProgress(0);
   };
 
-  // Handle upload start
   const handleUploadStart = () => {
     setIsUploading(true);
-    setUploadError(null); // Clear any previous error
-    setUploadProgress(0); // Reset progress
+    setUploadError(null);
+    setUploadProgress(0);
   };
 
-  // Handle upload progress
   const handleUploadProgress = (progress: number) => {
     setUploadProgress(progress);
   };
 
-  // Handle upload error
   const handleUploadError = (error: string) => {
-    setUploadError(error); // Save error message
-    setIsUploading(false); // Reset uploading state
-    setUploadProgress(0); // Reset progress
+    setUploadError(error);
+    setIsUploading(false);
+    setUploadProgress(0);
   };
 
   return (
@@ -51,10 +47,9 @@ const PDFAnalysisContainer: React.FC<PDFAnalysisContainerProps> = ({ projectId }
         onError={handleUploadError}
       />
 
-      {/* Upload progress */}
       {isUploading && (
         <div className="mt-4">
-          <p className="text-blue-500 text-sm">PDF wird hochgeladen und analysiert...</p>
+          <p className="text-blue-500 text-sm">PDF wird hochgeladen...</p>
           <div className="relative w-full bg-gray-200 rounded h-4 mt-2">
             <div
               className="absolute top-0 left-0 h-4 bg-blue-500 rounded"
@@ -65,22 +60,20 @@ const PDFAnalysisContainer: React.FC<PDFAnalysisContainerProps> = ({ projectId }
         </div>
       )}
 
-      {/* Upload error */}
       {uploadError && (
-        <p className="text-red-500 text-sm mt-4">Fehler beim Upload: {uploadError}</p>
+        <p className="mt-4 text-red-500 text-sm">Fehler beim Upload: {uploadError}</p>
       )}
 
-      {/* Analysis results */}
       {analysisResult && (
         <AnalysisResults
-          tasks={analysisResult?.tasks.map((task) => ({
+          tasks={analysisResult.tasks.map((task) => ({
             ...task,
             title: task.description,
-          })) ?? []}
-          totalEstimatedHours={analysisResult?.total_estimated_hours ?? 0}
-          riskFactors={analysisResult?.risk_factors ?? []}
-          documentAnalysis={analysisResult?.document_analysis}
-          confidenceAnalysis={analysisResult?.confidence_analysis}
+          }))}
+          totalEstimatedHours={analysisResult.total_estimated_hours}
+          riskFactors={analysisResult.risk_factors}
+          documentAnalysis={analysisResult.document_analysis}
+          confidenceAnalysis={analysisResult.confidence_analysis}
         />
       )}
     </div>
