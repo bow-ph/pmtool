@@ -10,7 +10,8 @@ const getBaseUrl = (): string => {
     }
     return url.replace(/\/$/, ''); // Entferne abschließenden Slash
   } catch (error) {
-    console.error('Fehler beim Abrufen der Base URL:', (error as Error).message || error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Fehler beim Abrufen der Base URL:', errorMessage);
     return 'http://localhost:8000'; // Fallback URL
   }
 };
@@ -35,7 +36,8 @@ apiClient.interceptors.request.use(
     return request;
   },
   (error) => {
-    console.error('Fehler beim Senden der Anfrage:', (error as Error).message || error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Fehler beim Senden der Anfrage:', errorMessage);
     return Promise.reject(error);
   }
 );
@@ -50,8 +52,9 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('API Fehler:', {
-      message: (error as Error).message,
+      message: errorMessage,
       response: error.response,
     });
     return Promise.reject(error);
@@ -65,7 +68,8 @@ export const queryClient = new QueryClient({
       retry: 1,
       staleTime: 5 * 60 * 1000, // 5 Minuten
       onError: (error: unknown) => {
-        console.error('Query Fehler:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error('Query Fehler:', errorMessage);
       },
     },
   },
