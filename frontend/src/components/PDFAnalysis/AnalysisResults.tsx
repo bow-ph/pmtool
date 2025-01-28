@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '../../utils/cn';
+import { cn } from '../../utils';
 
 interface AnalysisResultsProps {
   tasks: Array<{
@@ -20,7 +20,7 @@ interface AnalysisResultsProps {
     overall_confidence: number;
     rationale: string;
     improvement_suggestions: string[];
-    accuracy_factors: string[]; // Korrigierter Typ
+    accuracy_factors: Array<{ name: string; value: number }>;
   };
 }
 
@@ -53,7 +53,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         <h3 className={cn('text-lg font-medium text-gray-900 mb-4')}>Vertrauensfaktoren</h3>
         {confidenceAnalysis.accuracy_factors.map((factor, index) => (
           <p key={index} className={cn('text-sm text-gray-500')}>
-            {factor}
+            {factor.name}: {Math.round(factor.value * 100)}%
           </p>
         ))}
       </div>
