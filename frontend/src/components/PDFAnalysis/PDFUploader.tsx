@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useMutation } from '@tanstack/react-query';
+import { AxiosResponse } from 'axios';
 import { apiClient, endpoints } from '../../api/client';
 import { PdfAnalysisResponse } from '../../types/api';
 
@@ -19,12 +20,12 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({
   onUploadProgress,
   onError,
 }) => {
-  const uploadMutation = useMutation({
+  const uploadMutation = useMutation<AxiosResponse<PdfAnalysisResponse>, Error, File>({
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('file', file);
 
-      return apiClient.post(endpoints.analyzePdf(projectId), formData, {
+      return apiClient.post<PdfAnalysisResponse>(endpoints.analyzePdf(projectId), formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -36,8 +37,8 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({
         },
       });
     },
-    onSuccess: (data) => {
-      onAnalysisComplete(data);
+    onSuccess: (response) => {
+      onAnalysisComplete(response.data);
     },
     onError: (error) => {
       onError(error.message || 'Unbekannter Fehler');
@@ -93,7 +94,7 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({
       )}
       {uploadMutation.isError && (
         <p className="mt-2 text-red-500 text-sm">
-          Fehler beim Upload: {(uploadMutation.error as Error).message}
+          Fehler beim Upload: {(uploadMutation.error as Error)?.message || 'Unbekannter Fehler'}
         </p>
       )}
     </div>
