@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { PdfAnalysisResponse } from '../../types/api';
 import PDFUploader from './PDFUploader';
 import AnalysisResults from './AnalysisResults';
-import { cn } from '../../utils';
+import { cn } from '../../utils/cn'; // Sicherstellen, dass utils/cn existiert
 
 interface PDFAnalysisContainerProps {
   projectId: number;
@@ -67,13 +67,22 @@ const PDFAnalysisContainer: React.FC<PDFAnalysisContainerProps> = ({ projectId }
       {analysisResult && (
         <AnalysisResults
           tasks={analysisResult.tasks.map((task) => ({
-            ...task,
-            title: task.description,
+            title: task.description, // Transformation des Tasks
+            description: task.description,
+            estimated_hours: task.estimated_hours,
           }))}
           totalEstimatedHours={analysisResult.total_estimated_hours}
           riskFactors={analysisResult.risk_factors}
           documentAnalysis={analysisResult.document_analysis}
-          confidenceAnalysis={analysisResult.confidence_analysis}
+          confidenceAnalysis={{
+            ...analysisResult.confidence_analysis,
+            accuracy_factors: Object.keys(analysisResult.confidence_analysis.accuracy_factors).map(
+              (key) =>
+                `${key.replace(/_/g, ' ')}: ${Math.round(
+                  analysisResult.confidence_analysis.accuracy_factors[key] * 100
+                )}%`
+            ),
+          }}
         />
       )}
     </div>
