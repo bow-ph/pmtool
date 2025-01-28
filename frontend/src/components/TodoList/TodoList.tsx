@@ -1,5 +1,6 @@
 import React from 'react';
 
+// Lokale Definition des Task-Typs (falls Import nicht funktioniert)
 interface Task {
   id: number;
   description: string;
@@ -10,7 +11,7 @@ interface Task {
 }
 
 interface TodoListProps {
-  tasks: Task[];
+  tasks: Task[]; // Typ der Aufgaben
   onStatusChange?: (taskId: number, status: 'pending' | 'in_progress' | 'completed') => void;
 }
 
