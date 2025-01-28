@@ -75,7 +75,7 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({
         }`}
     >
       <input {...getInputProps()} />
-      {uploadMutation.status === 'loading' ? ( // Status statt isLoading
+      {uploadMutation.status === 'pending' ? ( // Status "pending" verwenden
         <div className="flex flex-col items-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
           <p className="text-gray-600">PDF wird hochgeladen...</p>
