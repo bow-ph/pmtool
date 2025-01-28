@@ -10,7 +10,7 @@ const getBaseUrl = (): string => {
     }
     return url.replace(/\/$/, ''); // Entferne abschließenden Slash
   } catch (error) {
-    console.error('Fehler beim Abrufen der Base URL:', error.message || error);
+    console.error('Fehler beim Abrufen der Base URL:', (error as Error).message || error);
     return 'http://localhost:8000'; // Fallback URL
   }
 };
@@ -35,7 +35,7 @@ apiClient.interceptors.request.use(
     return request;
   },
   (error) => {
-    console.error('Fehler beim Senden der Anfrage:', error.message);
+    console.error('Fehler beim Senden der Anfrage:', (error as Error).message || error);
     return Promise.reject(error);
   }
 );
@@ -51,31 +51,21 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     console.error('API Fehler:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
+      message: (error as Error).message,
+      response: error.response,
     });
-    if (error.response?.status === 401) {
-      console.warn('Benutzer ist nicht autorisiert. Weiterleitung zur Anmeldung...');
-      // Hier könnte man eine Weiterleitung zur Login-Seite einbauen
-    }
     return Promise.reject(error);
   }
 );
 
-// React Query Client konfigurieren
+// React Query Client erstellen
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2, // Versuche Anfragen 2 Mal neu
+      retry: 1,
       staleTime: 5 * 60 * 1000, // 5 Minuten
-      onError: (error) => {
+      onError: (error: unknown) => {
         console.error('Query Fehler:', error);
-      },
-    },
-    mutations: {
-      onError: (error) => {
-        console.error('Mutationsfehler:', error);
       },
     },
   },
