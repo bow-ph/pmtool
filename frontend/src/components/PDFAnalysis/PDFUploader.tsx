@@ -9,14 +9,22 @@ interface PDFUploaderProps {
   projectId: number;
   onAnalysisComplete: (result: PdfAnalysisResponse) => void;
   onUploadProgress?: (progress: number) => void;
+  onUploadStart?: () => void;
+  onError?: (error: string) => void;
 }
 
-const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete, onUploadProgress }) => {
-  const uploadMutation = useMutation({
+const PDFUploader: React.FC<PDFUploaderProps> = ({ 
+  projectId, 
+  onAnalysisComplete, 
+  onUploadProgress,
+  onUploadStart,
+  onError 
+}) => {
+  const uploadMutation = useMutation<PdfAnalysisResponse, Error, File>({
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await apiClient.post(
+      const response: AxiosResponse<PdfAnalysisResponse> = await apiClient.post(
         endpoints.analyzePdf(projectId),
         formData,
         {
@@ -32,20 +40,20 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete
         }
       );
       return response.data;
-  onUploadStart: () => void;
-  onUploadProgress: (progress: number) => void;
-  onError: (error: string) => void;
-}
+    },
+    onSuccess: onAnalysisComplete,
+    onError: (error) => onError?.(error.message)
+  });
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (acceptedFiles.length > 0) {
         const file = acceptedFiles[0];
         if (file.size > 10 * 1024 * 1024) {
-          onError('Die Datei darf nicht größer als 10 MB sein.');
+          onError?.('Die Datei darf nicht größer als 10 MB sein.');
           return;
         }
-        onUploadStart();
+        onUploadStart?.();
         uploadMutation.mutate(file);
       }
     },
@@ -63,8 +71,9 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete
   return (
     <div
       {...getRootProps()}
-      className={`p-8 border-2 border-dashed rounded-lg text-center cursor-pointer transition-colors ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
-        }`}
+      className={`p-8 border-2 border-dashed rounded-lg text-center cursor-pointer transition-colors ${
+        isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+      }`}
     >
       <input {...getInputProps()} />
       {uploadMutation.status === 'pending' ? ( // Status "pending" verwenden
