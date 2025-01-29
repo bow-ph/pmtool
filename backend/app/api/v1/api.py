@@ -13,6 +13,7 @@ from app.api.v1.endpoints import (
     tasks,
     health,
     projects,
+    subscriptions,
 )
 
 api_router = APIRouter()
@@ -29,4 +30,5 @@ api_router.include_router(scheduling.router, prefix="/scheduling", tags=["schedu
 api_router.include_router(todo.router, prefix="/todo", tags=["todo"], include_in_schema=True)
 api_router.include_router(tasks.router, prefix="/tasks", tags=["tasks"])
 api_router.include_router(projects.router, prefix="/projects", tags=["projects"])
+api_router.include_router(subscriptions.router, prefix="/subscriptions", tags=["subscriptions"])
 api_router.include_router(health.router)

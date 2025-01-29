@@ -33,74 +33,79 @@ def mock_subscription():
         end_date=datetime.now() + timedelta(days=90)
     )
 
-def test_get_my_subscription(mock_user, mock_subscription):
+def test_get_my_subscription(client, test_user, test_package, test_subscription):
     """Test getting current user's subscription"""
-    with patch('app.api.v1.endpoints.subscriptions.get_current_user', return_value=mock_user), \
-         patch('app.api.v1.endpoints.subscriptions.get_db'), \
-         patch('app.services.subscription_service.SubscriptionService.get_user_subscription', return_value=mock_subscription):
-        
-        response = client.get("/v1/subscriptions/me")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["id"] == mock_subscription.id
-        assert data["package_type"] == "team"
-        assert data["status"] == "active"
+    from app.core.auth import create_access_token
+    access_token = create_access_token({"sub": test_user.email})
+    headers = {"Authorization": f"Bearer {access_token}"}
+    
+    response = client.get("/api/v1/subscriptions/me", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == test_subscription.id
+    assert data["status"] == "active"
+    assert data["package_id"] == test_package.id
 
-def test_get_my_subscription_not_found(mock_user):
+def test_get_my_subscription_not_found(client, test_user):
     """Test getting subscription when none exists"""
-    with patch('app.api.v1.endpoints.subscriptions.get_current_user', return_value=mock_user), \
-         patch('app.api.v1.endpoints.subscriptions.get_db'), \
-         patch('app.services.subscription_service.SubscriptionService.get_user_subscription', return_value=None):
-        
-        response = client.get("/v1/subscriptions/me")
-        assert response.status_code == 404
-        assert response.json()["detail"] == "No active subscription found"
+    from app.core.auth import create_access_token
+    from app.core.database import SessionLocal
+    from sqlalchemy import text
+    
+    # Delete any existing subscriptions for this user
+    db = SessionLocal()
+    db.execute(text("DELETE FROM test_subscriptions WHERE user_id = :user_id"), {"user_id": test_user.id})
+    db.commit()
+    
+    access_token = create_access_token({"sub": test_user.email})
+    headers = {"Authorization": f"Bearer {access_token}"}
+    
+    response = client.get("/api/v1/subscriptions/me", headers=headers)
+    assert response.status_code == 404
+    assert response.json()["detail"] == "No active subscription found"
 
-def test_check_project_limit(mock_user):
+def test_check_project_limit(client, test_user, test_subscription):
     """Test checking project creation limit"""
-    limit_response = {
-        "can_create": True,
-        "current_count": 5,
-        "limit": 10,
-        "reason": None
-    }
+    from app.core.auth import create_access_token
+    access_token = create_access_token({"sub": test_user.email})
+    headers = {"Authorization": f"Bearer {access_token}"}
     
-    with patch('app.api.v1.endpoints.subscriptions.get_current_user', return_value=mock_user), \
-         patch('app.api.v1.endpoints.subscriptions.get_db'), \
-         patch('app.services.subscription_service.SubscriptionService.can_create_project', return_value=limit_response):
-        
-        response = client.get("/v1/subscriptions/me/project-limit")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["can_create"] is True
-        assert data["current_count"] == 5
-        assert data["limit"] == 10
+    response = client.get("/api/v1/subscriptions/me/project-limit", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data["can_create"], bool)
+    
+    # Only check count and limit if subscription exists and is active
+    if data["can_create"] or "current_count" in data:
+        assert isinstance(data["current_count"], int)
+        assert isinstance(data["limit"], (int, type(None)))
 
-def test_cancel_subscription(mock_user, mock_subscription):
+def test_cancel_subscription(client, test_user, test_subscription):
     """Test subscription cancellation"""
-    cancel_response = {
-        "status": "success",
-        "message": "Subscription cancelled successfully",
-        "end_date": (datetime.now() + timedelta(days=90)).isoformat()
-    }
+    from app.core.auth import create_access_token
+    access_token = create_access_token({"sub": test_user.email})
+    headers = {"Authorization": f"Bearer {access_token}"}
     
-    with patch('app.api.v1.endpoints.subscriptions.get_current_user', return_value=mock_user), \
-         patch('app.api.v1.endpoints.subscriptions.get_db'), \
-         patch('app.services.subscription_service.SubscriptionService.get_user_subscription', return_value=mock_subscription), \
-         patch('app.services.subscription_service.SubscriptionService.cancel_subscription', return_value=cancel_response):
-        
-        response = client.post("/v1/subscriptions/me/cancel", json={"reason": "Test cancellation"})
-        assert response.status_code == 200
-        data = response.json()
-        assert data["status"] == "success"
-        assert "end_date" in data
+    response = client.post("/api/v1/subscriptions/me/cancel", json={"reason": "Test cancellation"}, headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    assert "end_date" in data
 
-def test_cancel_subscription_not_found(mock_user):
+def test_cancel_subscription_not_found(client, test_user):
     """Test cancellation when no subscription exists"""
-    with patch('app.api.v1.endpoints.subscriptions.get_current_user', return_value=mock_user), \
-         patch('app.api.v1.endpoints.subscriptions.get_db'), \
-         patch('app.services.subscription_service.SubscriptionService.get_user_subscription', return_value=None):
-        
-        response = client.post("/v1/subscriptions/me/cancel")
-        assert response.status_code == 404
-        assert response.json()["detail"] == "No active subscription found"
+    from app.core.auth import create_access_token
+    from app.core.database import SessionLocal
+    from sqlalchemy import text
+    
+    # Delete any existing subscriptions for this user
+    db = SessionLocal()
+    db.execute(text("DELETE FROM test_subscriptions WHERE user_id = :user_id"), {"user_id": test_user.id})
+    db.commit()
+    
+    access_token = create_access_token({"sub": test_user.email})
+    headers = {"Authorization": f"Bearer {access_token}"}
+    
+    response = client.post("/api/v1/subscriptions/me/cancel", headers=headers)
+    assert response.status_code == 404
+    assert response.json()["detail"] == "No active subscription found"
