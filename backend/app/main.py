@@ -15,7 +15,7 @@ app = FastAPI(
     debug=True
 )
 
-CORS configuration temporarily disabled
+
 app.add_middleware(
      CORSMiddleware,
      allow_origins=[
