@@ -14,7 +14,7 @@ const ProjectAnalysis = () => {
     queryKey: ['proactiveHints', projectId],
     queryFn: async () => {
       const response = await apiClient.get(endpoints.getProactiveHints(projectId));
-      return response.data;
+      return response.data as ProactiveHintsResponse;
     },
     enabled: !!projectId,
   });
@@ -30,7 +30,13 @@ const ProjectAnalysis = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">PDF Analyse</h2>
-          <PDFUploader projectId={projectId} onAnalysisComplete={handleAnalysisComplete} />
+          <PDFUploader 
+            projectId={projectId} 
+            onAnalysisComplete={handleAnalysisComplete}
+            onUploadProgress={(progress) => {
+              console.log(`Upload progress: ${progress}%`);
+            }}
+          />
           
           {analysisResults && (
             <div className="mt-8">

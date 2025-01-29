@@ -7,9 +7,10 @@ import { PdfAnalysisResponse } from '../../types/api';
 interface PDFUploaderProps {
   projectId: number;
   onAnalysisComplete: (result: PdfAnalysisResponse) => void;
+  onUploadProgress?: (progress: number) => void;
 }
 
-const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete }) => {
+const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete, onUploadProgress }) => {
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
@@ -20,6 +21,12 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete
         {
           headers: {
             'Content-Type': 'multipart/form-data',
+          },
+          onUploadProgress: (progressEvent) => {
+            if (onUploadProgress && progressEvent.total) {
+              const progress = (progressEvent.loaded / progressEvent.total) * 100;
+              onUploadProgress(progress);
+            }
           },
         }
       );

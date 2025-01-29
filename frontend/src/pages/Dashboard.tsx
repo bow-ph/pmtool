@@ -9,7 +9,7 @@ const Dashboard = () => {
     queryKey: ['tasks'],
     queryFn: async () => {
       const response = await apiClient.get('/tasks');
-      return response.data;
+      return response.data as Task[];
     },
   });
 
