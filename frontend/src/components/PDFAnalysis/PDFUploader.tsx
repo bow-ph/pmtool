@@ -8,42 +8,34 @@ import { PdfAnalysisResponse } from '../../types/api';
 interface PDFUploaderProps {
   projectId: number;
   onAnalysisComplete: (result: PdfAnalysisResponse) => void;
+  onUploadProgress?: (progress: number) => void;
+}
+
+const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete, onUploadProgress }) => {
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await apiClient.post(
+        endpoints.analyzePdf(projectId),
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          onUploadProgress: (progressEvent) => {
+            if (onUploadProgress && progressEvent.total) {
+              const progress = (progressEvent.loaded / progressEvent.total) * 100;
+              onUploadProgress(progress);
+            }
+          },
+        }
+      );
+      return response.data;
   onUploadStart: () => void;
   onUploadProgress: (progress: number) => void;
   onError: (error: string) => void;
 }
-
-const PDFUploader: React.FC<PDFUploaderProps> = ({
-  projectId,
-  onAnalysisComplete,
-  onUploadStart,
-  onUploadProgress,
-  onError,
-}) => {
-  const uploadMutation = useMutation<AxiosResponse<PdfAnalysisResponse>, Error, File>({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      return apiClient.post<PdfAnalysisResponse>(endpoints.analyzePdf(projectId), formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.total) {
-            const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-            onUploadProgress(progress);
-          }
-        },
-      });
-    },
-    onSuccess: (response) => {
-      onAnalysisComplete(response.data);
-    },
-    onError: (error) => {
-      onError(error.message || 'Unbekannter Fehler');
-    },
-  });
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {

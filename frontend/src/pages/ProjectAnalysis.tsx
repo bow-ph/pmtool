@@ -22,7 +22,7 @@ const ProjectAnalysis = () => {
     queryKey: ['proactiveHints', projectId],
     queryFn: async () => {
       const response = await apiClient.get(endpoints.getProactiveHints(projectId));
-      return response.data;
+      return response.data as ProactiveHintsResponse;
     },
     enabled: !!projectId,
     onError: (error) => {
@@ -59,24 +59,14 @@ const ProjectAnalysis = () => {
         {/* PDF Analyse */}
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">PDF Analyse</h2>
-
-          <PDFUploader
-            projectId={projectId}
+          <PDFUploader 
+            projectId={projectId} 
             onAnalysisComplete={handleAnalysisComplete}
-            onUploadStart={handleUploadStart}
-            onError={handleUploadError}
+            onUploadProgress={(progress) => {
+              console.log(`Upload progress: ${progress}%`);
+            }}
           />
-
-          {isUploading && (
-            <p className="mt-4 text-blue-500 text-sm">PDF wird hochgeladen und analysiert...</p>
-          )}
-
-          {uploadError && (
-            <p className="mt-4 text-red-500 text-sm">
-              Fehler beim Upload: {uploadError}
-            </p>
-          )}
-
+          
           {analysisResults && (
             <div className="mt-8">
               <AnalysisResults

@@ -2,7 +2,24 @@ import React from 'react';
 import { ProactiveHintsResponse } from '../../types/api';
 
 interface ProactiveHintsPanelProps {
-  data: ProactiveHintsResponse;
+  data: ProactiveHintsResponse & {
+    status: string;
+    financial_impact: {
+      risk_level: 'low' | 'medium' | 'high';
+      potential_cost_overrun: number;
+      confidence: number;
+    };
+    time_impact: {
+      risk_level: 'low' | 'medium' | 'high';
+      potential_delay_hours: number;
+      confidence: number;
+    };
+    recommendations: Array<{
+      type: 'cost' | 'time' | 'resource';
+      description: string;
+      priority: 'low' | 'medium' | 'high';
+    }>;
+  };
 }
 
 const ProactiveHintsPanel: React.FC<ProactiveHintsPanelProps> = ({ data }) => {
