@@ -32,6 +32,16 @@ class Settings(BaseSettings):
 
     CALDAV_PUBLIC_URL: str = "https://docuplanai.com/caldav"
 
+    # Project Configuration
+    PROJECT_NAME: str = "PM Tool"
+    VERSION: str = "1.0.0"
+    DESCRIPTION: str = "Project Management Tool API"
+    
+    # API Configuration
+    API_V1_STR: str = "/api/v1"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
+    SECRET_KEY: str
+
     # API Keys
     OPENAI_API_KEY: str
     MOLLIE_TEST_API_KEY: str
@@ -61,7 +71,7 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
-        return f"postgresql://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}/{self.DATABASE_NAME}"
+        return f"postgresql://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}/{self.DATABASE_NAME}?client_encoding=utf8"
 
     # Model Config
     model_config = {

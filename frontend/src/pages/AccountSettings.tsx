@@ -8,8 +8,8 @@ const AccountSettings: React.FC = () => {
   // TODO: Get actual customer ID from user context
   const customerId = "test-customer-id";
   
-  const { getSubscriptions, cancelSubscription } = usePayment();
-  const { data: subscriptions, isLoading, error } = getSubscriptions(customerId);
+  const { useSubscriptions, cancelSubscription } = usePayment();
+  const { data: subscriptions, isLoading, error } = useSubscriptions(customerId);
 
   const handleCancelSubscription = async (subscriptionId: string) => {
     if (window.confirm('Sind Sie sicher, dass Sie Ihr Abonnement kündigen möchten?')) {
