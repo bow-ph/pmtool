@@ -3,20 +3,19 @@ import { apiClient } from '../api/client';
 import CalendarView from '../components/Calendar/CalendarView';
 import TodoList from '../components/TodoList/TodoList';
 
-// Aktualisierter Task-Typ
-interface Task {
-  id: number;
-  description: string;
-  start_date?: string; // Optional, falls es nicht immer vorhanden ist
-  estimated_hours?: number; // Optional, falls es nicht immer vorhanden ist
-}
+import { Task } from '@/types/api';
 
 const Dashboard = () => {
   const { data: tasks = [], error } = useQuery<Task[]>({
     queryKey: ['tasks'],
     queryFn: async () => {
       const response = await apiClient.get('/tasks');
-      return response.data as Task[];
+      const tasksData = response.data.map((task: any) => ({
+        ...task,
+        status: task.status || 'pending',
+        confidence_score: task.confidence_score || 0.5,
+      }));
+      return tasksData;
     },
   });
 
@@ -26,13 +25,12 @@ const Dashboard = () => {
 
   // Convert tasks to calendar events
   const calendarEvents = tasks.map((task) => {
-    const startDate = task.start_date ? new Date(task.start_date) : new Date();
-    const endDate = task.start_date && task.estimated_hours
-      ? new Date(new Date(task.start_date).getTime() + task.estimated_hours * 60 * 60 * 1000)
-      : new Date(new Date().getTime() + (task.estimated_hours || 0) * 60 * 60 * 1000);
+    const now = new Date();
+    const startDate = now;
+    const endDate = new Date(now.getTime() + (task.estimated_hours || 0) * 60 * 60 * 1000);
 
     return {
-      id: task.id.toString(),
+      id: task.id?.toString() || 'temp',
       title: task.description,
       start_date: startDate,
       end_date: endDate,
