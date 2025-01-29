@@ -67,10 +67,6 @@ export const queryClient = new QueryClient({
     queries: {
       retry: 1,
       staleTime: 5 * 60 * 1000, // 5 Minuten
-      onError: (error: unknown) => {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error('Query Fehler:', errorMessage);
-      },
     },
   },
 });

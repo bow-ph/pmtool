@@ -1,14 +1,6 @@
 import React from 'react';
 
-// Lokale Definition des Task-Typs (falls Import nicht funktioniert)
-interface Task {
-  id: number;
-  description: string;
-  estimated_hours: number;
-  actual_hours?: number;
-  status: 'pending' | 'in_progress' | 'completed';
-  confidence_score: number;
-}
+import { Task } from '@/types/api';
 
 interface TodoListProps {
   tasks: Task[]; // Typ der Aufgaben
@@ -53,9 +45,11 @@ const TodoList: React.FC<TodoListProps> = ({ tasks, onStatusChange }) => {
                 {onStatusChange && (
                   <select
                     value={task.status}
-                    onChange={(e) =>
-                      onStatusChange(task.id, e.target.value as 'pending' | 'in_progress' | 'completed')
-                    }
+                    onChange={(e) => {
+                      if (task.id !== undefined) {
+                        onStatusChange(task.id, e.target.value as 'pending' | 'in_progress' | 'completed');
+                      }
+                    }}
                     className={`ml-4 text-sm rounded-full px-2.5 py-0.5 ${getStatusColor(task.status)}`}
                   >
                     <option value="pending">Ausstehend</option>

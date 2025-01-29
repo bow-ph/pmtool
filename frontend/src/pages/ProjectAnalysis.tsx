@@ -10,6 +10,7 @@ const ProjectAnalysis = () => {
   const [analysisResults, setAnalysisResults] = useState<PdfAnalysisResponse | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const projectId = 1; // TODO: Get from route params
 
   // Fetch proactive hints for the project
@@ -22,13 +23,21 @@ const ProjectAnalysis = () => {
     queryKey: ['proactiveHints', projectId],
     queryFn: async () => {
       const response = await apiClient.get(endpoints.getProactiveHints(projectId));
-      return response.data as ProactiveHintsResponse;
+      const data = response.data as ProactiveHintsResponse;
+      
+      // Ensure all required properties are present with proper types
+      if (!data.status || !data.financial_impact || !data.time_impact || !data.recommendations) {
+        throw new Error('Unvollständige Daten von der API erhalten');
+      }
+      
+      return data;
     },
     enabled: !!projectId,
-    onError: (error) => {
-      console.error('Fehler beim Abrufen der proaktiven Hinweise:', error);
-    },
   });
+
+  if (isHintsError && hintsError) {
+    console.error('Fehler beim Abrufen der proaktiven Hinweise:', hintsError);
+  }
 
   // Handle successful analysis
   const handleAnalysisComplete = (results: PdfAnalysisResponse) => {
@@ -36,6 +45,7 @@ const ProjectAnalysis = () => {
     setAnalysisResults(results);
     setUploadError(null);
     setIsUploading(false);
+    setUploadProgress(0);
   };
 
   // Handle upload error
@@ -43,12 +53,14 @@ const ProjectAnalysis = () => {
     console.error('Upload-Fehler:', error);
     setUploadError(error);
     setIsUploading(false);
+    setUploadProgress(0);
   };
 
   // Start uploading
   const handleUploadStart = () => {
     setIsUploading(true);
     setUploadError(null);
+    setUploadProgress(0);
   };
 
   return (
@@ -59,13 +71,37 @@ const ProjectAnalysis = () => {
         {/* PDF Analyse */}
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">PDF Analyse</h2>
-          <PDFUploader 
-            projectId={projectId} 
-            onAnalysisComplete={handleAnalysisComplete}
-            onUploadProgress={(progress) => {
-              console.log(`Upload progress: ${progress}%`);
-            }}
-          />
+          <div className="space-y-4">
+            <PDFUploader 
+              projectId={projectId} 
+              onAnalysisComplete={handleAnalysisComplete}
+              onUploadProgress={(progress) => {
+                setIsUploading(true);
+                setUploadProgress(progress);
+              }}
+              onUploadStart={handleUploadStart}
+              onError={handleUploadError}
+            />
+            {isUploading && (
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  <span>Upload läuft... {uploadProgress.toFixed(0)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-500 rounded-full h-2 transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+            {uploadError && (
+              <div className="text-sm text-red-500">
+                {uploadError}
+              </div>
+            )}
+          </div>
           
           {analysisResults && (
             <div className="mt-8">
