@@ -18,7 +18,7 @@ async def list_packages(
     packages = db.query(Package).filter(Package.is_active == True).order_by(Package.sort_order).all()
     return packages
 
-@router.post("/", response_model=PackageSchema)
+@router.post("/", response_model=PackageSchema, status_code=201)
 async def create_package(
     package: PackageCreate,
     current_user: User = Depends(get_current_user),

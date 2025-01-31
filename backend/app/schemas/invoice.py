@@ -28,3 +28,4 @@ class Invoice(InvoiceBase):
 
 class InvoiceResponse(Invoice):
     pass
+

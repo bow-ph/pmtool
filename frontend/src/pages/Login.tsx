@@ -39,10 +39,12 @@ export default function LoginPage() {
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
+
     }
   };
 
   return (
+
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-[400px]">
         <CardHeader>

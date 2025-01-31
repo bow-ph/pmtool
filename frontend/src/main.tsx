@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles/globals.css'
 import App from './App.js'
+import { AuthProvider } from './contexts'
 
 const container = document.getElementById('root')
 if (!container) {
@@ -11,6 +12,8 @@ if (!container) {
 const root = createRoot(container)
 root.render(
   <StrictMode>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </StrictMode>
 )
