@@ -4,6 +4,9 @@ from typing import List, Optional
 class Settings(BaseSettings):
     # Application Configuration
     PROJECT_NAME: str = "DocuPlanAI"
+    VERSION: str = "1.0.0"
+    API_VERSION: str = "v1"
+    API_V1_STR: str = "/api/v1"
 
     # Database Configuration
     DATABASE_NAME: str = "pmtool"
