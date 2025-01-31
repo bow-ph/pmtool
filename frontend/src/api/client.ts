@@ -9,6 +9,15 @@ export const apiClient = axios.create({
   },
 });
 
+// Add auth token to requests if it exists
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // Create react-query client
 export const queryClient = new QueryClient({
   defaultOptions: {

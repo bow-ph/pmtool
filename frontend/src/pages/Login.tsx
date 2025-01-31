@@ -19,11 +19,12 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const formData = new FormData();
+      const formData = new URLSearchParams();
       formData.append('username', email);
       formData.append('password', password);
+      formData.append('grant_type', 'password');
 
-      const response = await apiClient.post('/auth/login', formData, {
+      const response = await apiClient.post('/api/v1/auth/login', formData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         }
