@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1.api import api_router
 import logging
@@ -17,15 +16,6 @@ app = FastAPI(
     debug=True,
     # Enable automatic redirect for trailing slashes
     redirect_slashes=True
-)
-
-# Configure CORS first
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://docuplanai.com"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
 )
 
 # Debug middleware to log all requests
