@@ -2,6 +2,9 @@ from pydantic_settings import BaseSettings
 from typing import List, Optional
 
 class Settings(BaseSettings):
+    # Application Configuration
+    PROJECT_NAME: str = "DocuPlanAI"
+
     # Database Configuration
     DATABASE_NAME: str = "pmtool"
     DATABASE_USER: str = "pmtool"
