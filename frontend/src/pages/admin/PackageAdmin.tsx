@@ -49,7 +49,7 @@ const PackageAdmin = () => {
         is_active: true
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Fehler beim Erstellen: ${error.message}`);
     }
   });
@@ -63,7 +63,7 @@ const PackageAdmin = () => {
       queryClient.invalidateQueries({ queryKey: ['packages'] });
       toast.success('Paket erfolgreich aktualisiert');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Fehler beim Aktualisieren: ${error.message}`);
     }
   });
@@ -77,7 +77,7 @@ const PackageAdmin = () => {
       queryClient.invalidateQueries({ queryKey: ['packages'] });
       toast.success('Paket erfolgreich gelöscht');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(`Fehler beim Löschen: ${error.message}`);
     }
   });

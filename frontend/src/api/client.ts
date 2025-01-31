@@ -2,6 +2,7 @@ import axios from 'axios';
 import { QueryClient } from '@tanstack/react-query';
 
 // Create axios instance with default config
+// Temporary test change for verifying PR workflow
 const getBaseUrl = () => {
   try {
     return import.meta.env.VITE_API_URL;
@@ -12,9 +13,11 @@ const getBaseUrl = () => {
 };
 
 export const apiClient = axios.create({
-  baseURL: getBaseUrl() || 'https://admin.docuplanai.com',
+  baseURL: (getBaseUrl() || 'https://admin.docuplanai.com') + '/api/v1',
   headers: {
+    
     'Content-Type': 'application/json',
+
   },
 });
 
@@ -41,7 +44,16 @@ export const queryClient = new QueryClient({
 export const endpoints = {
   analyzePdf: (projectId: number) => `/projects/${projectId}/analyze-pdf`,
   getProactiveHints: (projectId: number) => `/projects/${projectId}/proactive-hints`,
-  getMySubscription: () => `/subscriptions/me`,
-  checkProjectLimit: () => `/subscriptions/me/project-limit`,
-  cancelSubscription: () => `/subscriptions/me/cancel`,
+  getTasks: () => '/tasks',
+  getTask: (taskId: number) => `/tasks/${taskId}`,
+  createTask: () => '/tasks',
+  updateTask: (taskId: number) => `/tasks/${taskId}`,
+  deleteTask: (taskId: number) => `/tasks/${taskId}`,
+  getPackages: () => '/packages',
+  getSubscriptions: () => '/admin/subscriptions',
+  getInvoices: () => '/admin/invoices',
+  // User subscription endpoints
+  getMySubscription: () => '/subscriptions/me',
+  checkProjectLimit: () => '/subscriptions/me/project-limit',
+  cancelSubscription: () => '/subscriptions/me/cancel',
 };

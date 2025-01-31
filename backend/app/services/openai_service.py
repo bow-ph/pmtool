@@ -30,7 +30,7 @@ class OpenAIService:
             Dict: Contains extracted tasks and their time estimates
         """
         try:
-            response = await self.client.chat.completions.create(
+            response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": """You are a project management assistant specialized in analyzing project documents and extracting tasks with time estimates. You have expertise in identifying document types and understanding their context. Format your response as JSON with the following structure:
@@ -104,7 +104,7 @@ class OpenAIService:
                 "tasks": tasks
             }
             
-            response = await self.client.chat.completions.create(
+            response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": """You are a project management advisor specialized in financial and time impact analysis. Format your response as JSON with the following structure:
@@ -154,7 +154,7 @@ class OpenAIService:
                 "historical_data": historical_data
             }
             
-            response = await self.client.chat.completions.create(
+            response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": """You are a project estimation validator. Format your response as JSON with the following structure:

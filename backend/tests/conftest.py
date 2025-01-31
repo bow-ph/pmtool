@@ -15,7 +15,18 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 # Test database URL
-SQLALCHEMY_DATABASE_URL = "postgresql://pmtool:pmtool@localhost/pmtool_test"
+from app.core.config import settings
+
+# Use main database with test prefix
+SQLALCHEMY_DATABASE_URL = f"postgresql://pmtool:{settings.DATABASE_PASSWORD}@localhost/pmtool?client_encoding=utf8"
+
+def get_test_table_name(tablename: str) -> str:
+    return f"test_{tablename}"
+
+# Override table names for test environment
+for table in Base.metadata.tables.values():
+    table.schema = None
+    table.name = get_test_table_name(table.name)
 
 @pytest.fixture(scope="session")
 def db_engine():
@@ -35,18 +46,14 @@ def db_session(db_engine):
         session.close()
 
 @pytest.fixture(scope="function")
-def client(db_session, test_user):
+def client(db_session):
     def override_get_db():
         try:
             yield db_session
         finally:
             pass
-            
-    def override_get_current_user():
-        return test_user
     
     app.dependency_overrides[get_db] = override_get_db
-    app.dependency_overrides[get_current_user] = override_get_current_user
     
     with TestClient(app) as test_client:
         yield test_client
@@ -198,6 +205,7 @@ def test_subscription(db_session, test_user, test_package):
         package_id=test_package.id,
         mollie_id="sub_test",
         customer_id="cust_test",
+        package_type=test_package.name.lower().split()[0],  # e.g. "Test Package" -> "test"
         status="active",
         amount=test_package.price,
         interval=test_package.interval,
