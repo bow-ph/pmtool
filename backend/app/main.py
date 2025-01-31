@@ -1,5 +1,4 @@
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.api.v1.api import api_router
@@ -15,18 +14,7 @@ app = FastAPI(
     debug=True
 )
 
-# CORS configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # Development environment
-        "https://docuplanai.com",  # Production environment
-        "https://admin.docuplanai.com"  # Admin environment
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):

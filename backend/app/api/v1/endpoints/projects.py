@@ -44,6 +44,7 @@ async def create_project(
         description=project.description
     )
 
+
 @router.post("/{project_id}/analyze-pdf")
 async def analyze_pdf(
     project_id: int,
@@ -53,6 +54,7 @@ async def analyze_pdf(
 ) -> Dict:
     """
     Analyze a PDF file and extract tasks
+
     
     Args:
         project_id: ID of the project
@@ -70,6 +72,7 @@ async def analyze_pdf(
     project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+
         
     pdf_service = PDFAnalysisService(db)
     result = await pdf_service.analyze_pdf(project_id, file)
@@ -90,3 +93,4 @@ async def get_proactive_hints(
     estimation_service = EstimationService(db)
     hints = await estimation_service.generate_proactive_hints(project_id)
     return hints
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../api/client';
 import { Schedule, ScheduleValidation } from '../../types/scheduling';
@@ -10,6 +10,18 @@ interface SchedulingPanelProps {
 const SchedulingPanel: React.FC<SchedulingPanelProps> = ({ projectId }) => {
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [validation, setValidation] = useState<ScheduleValidation | null>(null);
+
+  const validateSchedule = useCallback(async (scheduleData: Schedule['schedule']) => {
+    try {
+      const response = await apiClient.post(
+        `/v1/scheduling/projects/${projectId}/validate-schedule`,
+        { schedule: scheduleData }
+      );
+      setValidation(response.data);
+    } catch (error) {
+      console.error('Error validating schedule:', error);
+    }
+  }, [projectId]);
 
   const { data: scheduleData, isLoading, error } = useQuery({
     queryKey: ['schedule', projectId],
@@ -25,19 +37,7 @@ const SchedulingPanel: React.FC<SchedulingPanelProps> = ({ projectId }) => {
       setSchedule(scheduleData);
       validateSchedule(scheduleData.schedule);
     }
-  }, [scheduleData]);
-
-  const validateSchedule = async (scheduleData: Schedule['schedule']) => {
-    try {
-      const response = await apiClient.post(
-        `/v1/scheduling/projects/${projectId}/validate-schedule`,
-        { schedule: scheduleData }
-      );
-      setValidation(response.data);
-    } catch (error) {
-      console.error('Error validating schedule:', error);
-    }
-  };
+  }, [scheduleData, projectId, validateSchedule]);
 
   if (isLoading) {
     return (

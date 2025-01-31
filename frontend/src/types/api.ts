@@ -13,6 +13,7 @@ export interface User {
   shipping_address?: string;
   phone_number?: string;
   contact_person?: string;
+  notes?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -33,6 +34,7 @@ export interface Invoice {
 // Project Analysis Types
 export interface Task {
   id?: number;
+  title: string;
   description: string;
   estimated_hours: number;
   actual_hours?: number;
