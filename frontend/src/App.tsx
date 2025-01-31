@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from './api/client'
 import { ThemeProvider } from './contexts/ThemeContext'
 import MainLayout from './layouts/MainLayout'
+import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import ProjectAnalysis from './pages/ProjectAnalysis'
 import PackageSelection from './pages/PackageSelection'
@@ -17,6 +18,7 @@ function App() {
       <ThemeProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/login" element={<Login />} />
             <Route path="/" element={<MainLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="analysis" element={<ProjectAnalysis />} />
