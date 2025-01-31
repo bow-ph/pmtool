@@ -16,7 +16,7 @@ from app.models.user import User
 from app.schemas.token import Token
 from app.schemas.user import UserCreate, User as UserSchema
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 @router.post("/register", response_model=UserSchema)
 def register(
