@@ -19,7 +19,8 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",  # Development environment
+        "http://localhost:3000",  # Development environment
+        "http://localhost:5173",  # Alternative development environment
         "https://docuplanai.com",  # Production environment
         "https://admin.docuplanai.com"  # Admin environment
     ],
