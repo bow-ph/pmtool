@@ -109,7 +109,10 @@ class PDFAnalysisService:
         # Analyze text with OpenAI
         try:
             response = await self.openai_service.analyze_pdf_text(pdf_text)
-            analysis_result = json.loads(response)
+            if isinstance(response, str):
+                analysis_result = json.loads(response)
+            else:
+                analysis_result = response
         except json.JSONDecodeError:
             raise HTTPException(status_code=500, detail="Error parsing OpenAI response")
         except Exception as e:
@@ -148,14 +151,30 @@ class PDFAnalysisService:
         created_tasks = []
         tasks = analysis.get("tasks", [])
         
+        if not tasks:
+            raise HTTPException(status_code=400, detail="No tasks found in analysis")
+        
         for task_data in tasks:
-            # Clean task description by removing common headers/footers
+            if "description" not in task_data:
+                raise HTTPException(status_code=400, detail="Task missing required description field")
+            if "estimated_hours" not in task_data:
+                raise HTTPException(status_code=400, detail="Task missing required estimated_hours field")
+                
+            estimated_hours = float(task_data["estimated_hours"])
+            if estimated_hours <= 0:
+                raise HTTPException(status_code=400, detail="estimated_hours must be greater than 0")
+                
             description = self._clean_text(task_data["description"])
+            if not description.strip():
+                raise HTTPException(status_code=400, detail="Task description cannot be empty")
+                
             task = Task(
                 project_id=project_id,
                 description=description,
-                estimated_hours=task_data["estimated_hours"],
+                estimated_hours=estimated_hours,
+                actual_hours=task_data.get("actual_hours", None),  # Initialize as None
                 status="pending",
+                priority=task_data.get("complexity", "medium").lower(),
                 confidence_score=task_data.get("confidence", 0.0),
                 confidence_rationale=task_data.get("confidence_rationale", "")
             )
@@ -163,6 +182,7 @@ class PDFAnalysisService:
             created_tasks.append({
                 "description": task.description,
                 "estimated_hours": task.estimated_hours,
+                "priority": task.priority,
                 "confidence_score": task.confidence_score,
                 "confidence_rationale": task.confidence_rationale
             })
