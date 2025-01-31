@@ -63,7 +63,6 @@ class Settings(BaseSettings):
     # Service Configuration
     DEBUG: bool = False
     ALLOWED_HOSTS: List[str] = ["admin.docuplanai.com", "localhost"]
-    CORS_ORIGINS: List[str] = ["https://docuplanai.com", "http://localhost:3000"]
 
     # Server Configuration
     SERVER_IP: Optional[str] = None
