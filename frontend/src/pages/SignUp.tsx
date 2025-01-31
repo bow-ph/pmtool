@@ -20,10 +20,15 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      await apiClient.post('/auth/register', {
-        email,
-        password,
-        subscription_type: selectedPackage
+      const formData = new FormData();
+      formData.append('email', email);
+      formData.append('password', password);
+      formData.append('subscription_type', selectedPackage);
+      
+      await apiClient.post('/auth/register', formData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
       });
       
       toast.success('Account created successfully!');
