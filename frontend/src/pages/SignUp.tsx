@@ -25,7 +25,7 @@ export default function SignUpPage() {
       formData.append('password', password);
       formData.append('subscription_type', selectedPackage);
       
-      await apiClient.post('/auth/register', formData, {
+      await apiClient.post('/api/v1/auth/register', formData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         }
