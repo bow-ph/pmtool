@@ -6,6 +6,14 @@ import PackageCard from '../components/Packages/PackageCard';
 import { usePayment } from '../hooks/usePayment';
 import { toast } from 'react-hot-toast';
 
+type SubscriptionType = 'trial' | 'team' | 'enterprise';
+
+const SUBSCRIPTION_LIMITS = {
+  trial: { projects: 1, duration: '2 days' },
+  team: { projects: 5, duration: '1 month' },
+  enterprise: { projects: 'Custom', duration: 'Custom' },
+};
+
 const PackageSelection = () => {
   const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
 
@@ -23,35 +31,48 @@ const PackageSelection = () => {
     setSelectedPackage(packageId);
   };
 
+  const updateUserSubscription = async (subscriptionType: SubscriptionType) => {
+    try {
+      await apiClient.put('/users/me', { subscription_type: subscriptionType });
+      toast.success('Subscription updated successfully');
+    } catch (error) {
+      toast.error('Failed to update subscription');
+      throw error;
+    }
+  };
+
   const handleCheckout = async () => {
     if (!selectedPackage) return;
 
     const selectedPkg = packages?.find(pkg => pkg.id === selectedPackage);
     if (!selectedPkg) return;
 
+    const subscriptionType = selectedPkg.name.toLowerCase() as SubscriptionType;
+    
     try {
-      toast.loading('Erstelle Kundenkonto...');
+      toast.loading('Creating customer account...');
       const customer = await createCustomer.mutateAsync({
-        name: "Test Customer", // TODO: Get from user context
-        email: "test@example.com", // TODO: Get from user context
+        name: "Test Customer",
+        email: "test@example.com",
       });
 
-      toast.loading('Erstelle Abonnement...');
+      toast.loading('Setting up subscription...');
       const subscription = await createSubscription.mutateAsync({
         customerId: customer.id,
         amount: selectedPkg.price,
-        interval: "3 months", // Based on package requirements
-        description: `Subscription for ${selectedPkg.name} package`,
+        interval: subscriptionType === 'trial' ? '2 days' : '1 month',
+        description: `${selectedPkg.name} package (${SUBSCRIPTION_LIMITS[subscriptionType].projects} projects, ${SUBSCRIPTION_LIMITS[subscriptionType].duration})`,
       });
 
       if (subscription.paymentUrl) {
-        toast.success('Weiterleitung zur Zahlung...');
+        await updateUserSubscription(subscriptionType);
+        toast.success('Redirecting to payment...');
         window.location.href = subscription.paymentUrl;
       } else {
-        toast.error('Fehler bei der Zahlungsabwicklung');
+        toast.error('Payment processing failed');
       }
     } catch (error) {
-      toast.error('Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.');
+      toast.error('An error occurred. Please try again later.');
       console.error('Error creating subscription:', error);
     }
   };
@@ -71,7 +92,10 @@ const PackageSelection = () => {
           Wählen Sie Ihr Paket
         </h2>
         <p className="mt-4 text-lg text-gray-500">
-          Wählen Sie das passende Paket für Ihre Bedürfnisse
+          Choose the package that fits your needs
+        </p>
+        <p className="mt-2 text-sm text-gray-400">
+          Trial: 1 project, 2 days • Team: 5 projects, 1 month • Enterprise: Custom limits
         </p>
       </div>
 

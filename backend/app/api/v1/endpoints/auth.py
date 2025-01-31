@@ -36,7 +36,7 @@ def register(
     db_user = User(
         email=user_in.email,
         hashed_password=hashed_password,
-        subscription_type="trial",  # Default to trial
+        subscription_type=user_in.subscription_type.value if user_in.subscription_type else "trial",
     )
     db.add(db_user)
     db.commit()
