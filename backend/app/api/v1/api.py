@@ -14,7 +14,7 @@ from app.api.v1.endpoints import (
 
 api_router = APIRouter()
 
-api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
+api_router.include_router(auth.router)
 api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
 api_router.include_router(caldav.router, prefix="/caldav", tags=["caldav"])
 api_router.include_router(estimations.router, prefix="/estimations", tags=["estimations"])
