@@ -15,8 +15,19 @@ const getBaseUrl = () => {
 export const apiClient = axios.create({
   baseURL: (getBaseUrl() || 'https://admin.docuplanai.com') + '/api/v1',
   headers: {
-    'Content-Type': 'application/json'
+    
+    'Content-Type': 'application/json',
+
   },
+});
+
+// Add request interceptor to dynamically add auth token
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 // Create react-query client
