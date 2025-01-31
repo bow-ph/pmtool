@@ -18,6 +18,7 @@ app = FastAPI(
     redirect_slashes=True
 )
 
+
 # Debug middleware to log all requests
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -29,6 +30,7 @@ async def log_requests(request: Request, call_next):
 
 # Include API router
 app.include_router(api_router)
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):

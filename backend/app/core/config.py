@@ -1,7 +1,19 @@
 from pydantic_settings import BaseSettings
+import os
 from typing import List, Optional
 
 class Settings(BaseSettings):
+    # Application Configuration
+    PROJECT_NAME: str = "DocuPlanAI"
+    VERSION: str = "1.0.0"
+    API_VERSION: str = "v1"
+    API_V1_STR: str = "/api/v1"
+
+    # JWT Configuration
+    SECRET_KEY: str = os.getenv("JWT_SECRET", "")
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+
     # Database Configuration
     DATABASE_NAME: str = "pmtool"
     DATABASE_USER: str = "pmtool"

@@ -2,28 +2,18 @@ import axios from 'axios';
 import { QueryClient } from '@tanstack/react-query';
 
 // Create axios instance with default config
-// Temporary test change for verifying PR workflow
-const getBaseUrl = () => {
-  try {
-    return import.meta.env.VITE_API_URL;
-  } catch {
-    // For test environment
-    return 'http://localhost:8000';
-  }
-};
 
 export const apiClient = axios.create({
-  baseURL: (getBaseUrl() || 'https://admin.docuplanai.com') + '/api/v1',
+  baseURL: 'http://localhost:8000',
   headers: {
-    
-    'Content-Type': 'application/json',
-
+    'Content-Type': 'application/json'
   },
 });
 
-// Add request interceptor to dynamically add auth token
+// Add auth token to requests if it exists
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token');
+  const token = localStorage.getItem('access_token');
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

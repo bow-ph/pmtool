@@ -20,16 +20,24 @@ class UserBase(BaseModel):
     contact_person: Optional[str] = None  # Primary contact for company clients
     notes: Optional[str] = None  # Admin notes about the client
 
+from enum import Enum
+
+class SubscriptionType(str, Enum):
+    TRIAL = "trial"
+    TEAM = "team"
+    ENTERPRISE = "enterprise"
+
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
+    subscription_type: Optional[SubscriptionType] = SubscriptionType.TRIAL
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     password: Optional[str] = None
     is_active: Optional[bool] = None
     two_factor_enabled: Optional[bool] = None
-    subscription_type: Optional[str] = None
+    subscription_type: Optional[SubscriptionType] = None
     subscription_end_date: Optional[datetime] = None
     
     # Client information
