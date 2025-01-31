@@ -2,15 +2,6 @@ import axios from 'axios';
 import { QueryClient } from '@tanstack/react-query';
 
 // Create axios instance with default config
-const getBaseUrl = () => {
-  try {
-    return import.meta.env.VITE_API_URL;
-  } catch {
-    // For test environment
-    return 'http://localhost:8000';
-  }
-};
-
 export const apiClient = axios.create({
   baseURL: 'http://localhost:8000/api/v1',
   headers: {
