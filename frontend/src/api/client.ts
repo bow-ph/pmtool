@@ -12,10 +12,9 @@ const getBaseUrl = () => {
 };
 
 export const apiClient = axios.create({
-  baseURL: getBaseUrl() || 'https://admin.docuplanai.com',
+  baseURL: 'http://localhost:8000/api/v1',
   headers: {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBwbXRvb2wudGVzdCIsImV4cCI6MTczODMxMjMwNX0.c_9LN8Z2xU9IVa9Ee2-bXxY-vjD8PkKQxCmu--346uY'
+    'Content-Type': 'application/json'
   },
 });
 
