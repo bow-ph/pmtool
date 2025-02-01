@@ -44,8 +44,11 @@ class OpenAIService:
     },
     "tasks": [
         {
-            "description": "Task description",
-            "estimated_hours": float,
+            "title": "Task title",
+            "description": "Detailed task description",
+            "duration_hours": float,
+            "hourly_rate": float,
+            "planned_timeframe": "YYYY-MM-DD - YYYY-MM-DD",
             "confidence": float (0-1),
             "confidence_rationale": "Detailed explanation including task clarity, dependencies, and risks",
             "dependencies": ["other task descriptions"],
@@ -53,6 +56,14 @@ class OpenAIService:
             "requires_client_input": boolean,
             "technical_requirements": ["list of technical requirements"],
             "deliverables": ["list of expected deliverables"]
+        }
+    ],
+    "hints": [
+        {
+            "message": "Detailed hint message about potential issues or improvements",
+            "related_task": "Title of the related task",
+            "priority": "low|medium|high",
+            "impact": "cost|time|quality"
         }
     ],
     "total_estimated_hours": float,

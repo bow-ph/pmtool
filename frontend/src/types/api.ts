@@ -32,12 +32,21 @@ export interface Invoice {
 }
 
 // Project Analysis Types
+export interface Hint {
+  message: string;
+  related_task?: string;
+  priority: 'low' | 'medium' | 'high';
+  impact: 'cost' | 'time' | 'quality';
+}
+
 export interface Task {
   id?: number;
   title: string;
   description: string;
   estimated_hours: number;
   actual_hours?: number;
+  duration_hours?: number;
+  hourly_rate?: number;
   status: 'pending' | 'in_progress' | 'completed';
   confidence_score: number;
   confidence_rationale?: string;
@@ -57,6 +66,7 @@ export interface PdfAnalysisResponse {
     clarity_score: number;
   };
   tasks: Task[];
+  hints: Hint[];
   total_estimated_hours: number;
   risk_factors: string[];
   confidence_analysis: {

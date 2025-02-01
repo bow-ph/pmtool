@@ -1,6 +1,7 @@
 from typing import Dict, List
 import pdfplumber
 from fastapi import UploadFile, HTTPException
+from fastapi.responses import FileResponse
 from app.services.openai_service import OpenAIService
 from app.models.task import Task
 from sqlalchemy.orm import Session
@@ -181,6 +182,7 @@ class PDFAnalysisService:
                 "clarity_score": 0.0
             }),
             "tasks": created_tasks,
+            "hints": analysis_result.get("hints", []),
             "total_estimated_hours": analysis_result.get("total_estimated_hours", 0),
             "risk_factors": analysis_result.get("risk_factors", []),
             "confidence_analysis": analysis_result.get("confidence_analysis", {
@@ -220,9 +222,12 @@ class PDFAnalysisService:
                 
             task = Task(
                 project_id=project_id,
+                title=task_data.get("title", description[:50]),
                 description=description,
+                duration_hours=float(task_data.get("duration_hours", estimated_hours)),
+                hourly_rate=float(task_data.get("hourly_rate", 0.0)),
                 estimated_hours=estimated_hours,
-                actual_hours=task_data.get("actual_hours", None),  # Initialize as None
+                actual_hours=task_data.get("actual_hours", None),
                 status="pending",
                 priority=task_data.get("complexity", "medium").lower(),
                 confidence_score=task_data.get("confidence", 0.0),
@@ -230,7 +235,10 @@ class PDFAnalysisService:
             )
             self.db.add(task)
             created_tasks.append({
+                "title": task.title,
                 "description": task.description,
+                "duration_hours": task.duration_hours,
+                "hourly_rate": task.hourly_rate,
                 "estimated_hours": task.estimated_hours,
                 "priority": task.priority,
                 "confidence_score": task.confidence_score,
