@@ -12,12 +12,13 @@ from app.api.v1.endpoints import (
     todo,
     health,
     pdf,
-    hints
+    hints,
+    projects
 )
 
 api_router = APIRouter(prefix="/api/v1")
 
-api_router.include_router(auth.router)
+api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
 api_router.include_router(caldav.router, prefix="/caldav", tags=["caldav"])
 api_router.include_router(estimations.router, prefix="/estimations", tags=["estimations"])
@@ -30,4 +31,5 @@ api_router.include_router(todo.router, prefix="/todo", tags=["todo"], include_in
 api_router.include_router(health.router, tags=["health"])
 api_router.include_router(pdf.router, prefix="/pdf", tags=["pdf"])
 api_router.include_router(hints.router, prefix="/projects", tags=["hints"])
+api_router.include_router(projects.router, prefix="/projects", tags=["projects"])
 

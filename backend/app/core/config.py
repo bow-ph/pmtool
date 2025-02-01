@@ -15,10 +15,10 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
     # Database Configuration
-    DATABASE_NAME: str = "pmtool"
-    DATABASE_USER: str = "pmtool"
-    DATABASE_PASSWORD: str
-    DATABASE_HOST: str = "localhost"
+    DATABASE_NAME: str = os.getenv("DATABASE_NAME", "bow_db")
+    DATABASE_USER: str = os.getenv("DATABASE_USER", "pmtool")
+    DATABASE_PASSWORD: str = os.getenv("DATABASE_PASSWORD", "pmtool")
+    DATABASE_HOST: str = os.getenv("DATABASE_HOST", "localhost")
 
     # Redis Configuration
     REDIS_HOST: str = "localhost"
@@ -36,6 +36,22 @@ class Settings(BaseSettings):
     CALDAV_HOST: str = "localhost"
     CALDAV_PORT: int = 5232
     CALDAV_SSL: bool = False
+    CALDAV_USERNAME: str = os.getenv("CALDAV_USERNAME", "pmtool")
+    CALDAV_PASSWORD: str = os.getenv("CALDAV_PASSWORD", "pmtool")
+    CALDAV_AUTH_ENABLED: bool = os.getenv("CALDAV_AUTH_ENABLED", "true").lower() == "true"
+    
+    CALDAV_STORAGE_PATH: str = os.getenv("CALDAV_STORAGE_PATH", "/tmp/caldav_storage")
+
+    @property
+    def caldav_storage_path(self) -> str:
+        """Get the absolute path to CalDAV storage directory"""
+        base_path = self.CALDAV_STORAGE_PATH
+        if not os.path.isabs(base_path):
+            base_path = os.path.join(os.getcwd(), base_path)
+        collection_root = os.path.join(base_path, "collection-root")
+        os.makedirs(collection_root, mode=0o755, exist_ok=True)
+        print(f"CalDAV storage path: {collection_root}")
+        return base_path
 
     @property
     def caldav_url(self) -> str:
