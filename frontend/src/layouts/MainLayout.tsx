@@ -1,12 +1,12 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { apiClient } from '../api/client';
-import { cn } from "../lib/utils";
+import { cn } from "../utils";
 import {
   LayoutDashboard,
   Brain,
   UserCircle,
-  Settings,
+
   LogOut,
   Package,
   Users,
