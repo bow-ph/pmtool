@@ -106,10 +106,10 @@ class PDFAnalysisService:
         if not pdf_text:
             raise HTTPException(status_code=400, detail="No text content found in PDF")
 
-        # Analyze text with OpenAI
+        # Analyze text with OpenAI and parse JSON response
         try:
-            response = await self.openai_service.analyze_pdf_text(pdf_text)
-            analysis_result = json.loads(response)
+            response_str = await self.openai_service.analyze_pdf_text(pdf_text)
+            analysis_result = json.loads(response_str)
         except json.JSONDecodeError:
             raise HTTPException(status_code=500, detail="Error parsing OpenAI response")
         except Exception as e:
