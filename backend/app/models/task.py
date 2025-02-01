@@ -8,6 +8,7 @@ class Task(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"))
+    title = Column(String)
     description = Column(String)
     estimated_hours = Column(Float)
     actual_hours = Column(Float, nullable=True)
@@ -15,8 +16,13 @@ class Task(Base):
     priority = Column(String, nullable=True)  # high, medium, low
     confidence_score = Column(Float)  # AI confidence in the estimate (0-1)
     confidence_rationale = Column(String)  # Detailed explanation of confidence score
+    hourly_rate = Column(Float, nullable=True)
+    duration_hours = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # CalDAV integration
+    caldav_event_uid = Column(String, nullable=True)
 
     # Relationships
     project = relationship("Project", back_populates="tasks")

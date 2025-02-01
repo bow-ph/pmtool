@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { PdfAnalysisResponse } from '@/types/api';
 import PDFUploader from './PDFUploader';
 import AnalysisResults from './AnalysisResults';
-import { cn } from '@/utils'; // Absoluter Import
+import { cn } from '@/utils';
+import ProactiveHintsPanel from '../ProactiveHints/ProactiveHintsPanel';
 
 interface PDFAnalysisContainerProps {
   projectId: number;
@@ -13,6 +14,7 @@ const PDFAnalysisContainer: React.FC<PDFAnalysisContainerProps> = ({ projectId }
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   const handleAnalysisComplete = (result: PdfAnalysisResponse) => {
     setAnalysisResult(result);
@@ -45,6 +47,7 @@ const PDFAnalysisContainer: React.FC<PDFAnalysisContainerProps> = ({ projectId }
         onUploadStart={handleUploadStart}
         onUploadProgress={handleUploadProgress}
         onError={handleUploadError}
+        onPdfUploaded={setPdfUrl}
       />
 
       {isUploading && (
@@ -65,22 +68,38 @@ const PDFAnalysisContainer: React.FC<PDFAnalysisContainerProps> = ({ projectId }
       )}
 
       {analysisResult && (
-        <AnalysisResults
-          tasks={analysisResult.tasks.map((task) => ({
-            title: task.description,
-            description: task.description,
-            estimated_hours: task.estimated_hours,
-          }))}
-          totalEstimatedHours={analysisResult.total_estimated_hours}
-          riskFactors={analysisResult.risk_factors}
-          documentAnalysis={analysisResult.document_analysis}
-          confidenceAnalysis={{
-            ...analysisResult.confidence_analysis,
-            accuracy_factors: Object.entries(
-              analysisResult.confidence_analysis.accuracy_factors
-            ).map(([key, value]) => ({ name: key.replace(/_/g, ' '), value })),
-          }}
-        />
+        <>
+          {analysisResult.hints && analysisResult.hints.length > 0 && (
+            <ProactiveHintsPanel
+              data={analysisResult}
+              projectId={projectId}
+            />
+          )}
+          <AnalysisResults
+            tasks={analysisResult.tasks}
+            totalEstimatedHours={analysisResult.total_estimated_hours}
+            riskFactors={analysisResult.risk_factors}
+            documentAnalysis={analysisResult.document_analysis}
+            confidenceAnalysis={{
+              ...analysisResult.confidence_analysis,
+              accuracy_factors: [
+                { name: 'Document Clarity', value: analysisResult.confidence_analysis.accuracy_factors.document_clarity },
+                { name: 'Technical Complexity', value: analysisResult.confidence_analysis.accuracy_factors.technical_complexity },
+                { name: 'Dependency Risk', value: analysisResult.confidence_analysis.accuracy_factors.dependency_risk },
+                { name: 'Client Input Risk', value: analysisResult.confidence_analysis.accuracy_factors.client_input_risk }
+              ],
+            }}
+          />
+          {pdfUrl && (
+            <div className="mt-6 border rounded-lg overflow-hidden">
+              <iframe
+                src={pdfUrl}
+                className="w-full h-[600px]"
+                title="Uploaded PDF"
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -5,12 +5,17 @@ import { AxiosResponse } from 'axios';
 import { apiClient, endpoints } from '../../api/client';
 import { PdfAnalysisResponse } from '../../types/api';
 
+interface UploadResponse {
+  pdf_url: string;
+}
+
 interface PDFUploaderProps {
   projectId: number;
   onAnalysisComplete: (result: PdfAnalysisResponse) => void;
   onUploadProgress?: (progress: number) => void;
   onUploadStart?: () => void;
   onError?: (error: string) => void;
+  onPdfUploaded?: (pdfUrl: string) => void;
 }
 
 const PDFUploader: React.FC<PDFUploaderProps> = ({ 
@@ -18,14 +23,17 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({
   onAnalysisComplete, 
   onUploadProgress,
   onUploadStart,
-  onError 
+  onError,
+  onPdfUploaded
 }) => {
   const uploadMutation = useMutation<PdfAnalysisResponse, Error, File>({
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('file', file);
-      const response: AxiosResponse<PdfAnalysisResponse> = await apiClient.post(
-        endpoints.analyzePdf(projectId),
+
+      // First upload the PDF
+      const uploadResponse: AxiosResponse<UploadResponse> = await apiClient.post(
+        '/api/v1/pdf/upload',
         formData,
         {
           headers: {
@@ -39,7 +47,16 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({
           },
         }
       );
-      return response.data;
+
+      // Then analyze it
+      const analysisResponse: AxiosResponse<PdfAnalysisResponse> = await apiClient.post(
+        endpoints.analyzePdf(projectId),
+        { pdf_url: uploadResponse.data.pdf_url },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+
+      onPdfUploaded?.(uploadResponse.data.pdf_url);
+      return analysisResponse.data;
     },
     onSuccess: onAnalysisComplete,
     onError: (error) => onError?.(error.message)
