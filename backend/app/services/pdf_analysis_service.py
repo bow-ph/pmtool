@@ -7,11 +7,61 @@ from sqlalchemy.orm import Session
 import json
 import tempfile
 import os
+from datetime import datetime
 
 class PDFAnalysisService:
     def __init__(self, db: Session):
         self.db = db
         self.openai_service = OpenAIService()
+        self.upload_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads", "pdfs")
+        os.makedirs(self.upload_dir, exist_ok=True)
+
+    async def store_pdf(self, file: UploadFile, user_id: int) -> str:
+        """Store uploaded PDF and return its URL"""
+        if not file.filename.lower().endswith('.pdf'):
+            raise HTTPException(status_code=400, detail="Invalid file type. Only PDF files are supported.")
+
+        try:
+            content = await file.read()
+            if not content.startswith(b'%PDF-'):
+                raise HTTPException(status_code=400, detail="Invalid file type. File content is not a valid PDF.")
+
+            # Create user-specific directory
+            user_dir = os.path.join(self.upload_dir, str(user_id))
+            os.makedirs(user_dir, exist_ok=True)
+
+            # Generate unique filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            safe_filename = "".join(c for c in file.filename if c.isalnum() or c in ('-', '_')).lower()
+            pdf_filename = f"{timestamp}_{safe_filename}"
+            pdf_path = os.path.join(user_dir, pdf_filename)
+
+            # Save the file
+            with open(pdf_path, "wb") as f:
+                f.write(content)
+
+            return f"/api/v1/pdf/get/{user_id}/{pdf_filename}"
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error storing PDF: {str(e)}")
+
+    async def get_pdf_path(self, pdf_id: str, user_id: int) -> str:
+        """Get the full path of a stored PDF file"""
+        try:
+            user_id_str, filename = pdf_id.split("/", 1)
+            if int(user_id_str) != user_id:
+                raise HTTPException(status_code=403, detail="Access denied")
+
+            pdf_path = os.path.join(self.upload_dir, str(user_id), filename)
+            if not os.path.exists(pdf_path):
+                raise HTTPException(status_code=404, detail="PDF not found")
+
+            return pdf_path
+
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid PDF ID format")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error retrieving PDF: {str(e)}")
         
     def _clean_text(self, text: str) -> str:
         """Remove common headers, footers, and clean up text"""
