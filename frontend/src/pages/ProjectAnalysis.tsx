@@ -2,13 +2,23 @@ import { useState } from 'react';
 import PDFUploader from '../components/PDFAnalysis/PDFUploader';
 import AnalysisResults from '../components/PDFAnalysis/AnalysisResults';
 import ProactiveHintsPanel from '../components/ProactiveHints/ProactiveHintsPanel';
-import { PdfAnalysisResponse, ProactiveHintsResponse } from '../types/api';
+import { FileList } from '../components/PDFAnalysis/FileList';
+import { PdfAnalysisResponse, ProactiveHintsResponse, UploadedPdfFile } from '../types/api';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient, endpoints } from '../api/client';
 
 const ProjectAnalysis = () => {
   const [analysisResults, setAnalysisResults] = useState<PdfAnalysisResponse | null>(null);
   const projectId = 1; // TODO: Get from route params
+
+  const { data: uploadedFiles } = useQuery<UploadedPdfFile[]>({
+    queryKey: ['uploadedFiles', projectId],
+    queryFn: async () => {
+      const response = await apiClient.get(endpoints.getUploadedPdfs(projectId));
+      return response.data;
+    },
+    enabled: !!projectId,
+  });
 
   const { data: proactiveHints } = useQuery<ProactiveHintsResponse>({
     queryKey: ['proactiveHints', projectId],
@@ -31,6 +41,12 @@ const ProjectAnalysis = () => {
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">PDF Analyse</h2>
           <PDFUploader projectId={projectId} onAnalysisComplete={handleAnalysisComplete} />
+          
+          {uploadedFiles && uploadedFiles.length > 0 && (
+            <div className="mt-6">
+              <FileList files={uploadedFiles} />
+            </div>
+          )}
           
           {analysisResults && (
             <div className="mt-8">
