@@ -4,7 +4,7 @@ import { QueryClient } from '@tanstack/react-query';
 // Base URL konfigurieren
 const getBaseUrl = (): string => {
   try {
-    const url = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const url = import.meta.env.VITE_API_URL || 'https://admin.docuplanai.com';
     if (!/^https?:\/\//.test(url)) {
       throw new Error('Ungültiges URL-Schema. Die Base URL muss mit "http://" oder "https://" beginnen.');
     }
@@ -12,7 +12,7 @@ const getBaseUrl = (): string => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('Fehler beim Abrufen der Base URL:', errorMessage);
-    return 'http://localhost:8000'; // Fallback URL
+    return 'https://admin.docuplanai.com'; // Fallback URL
   }
 };
 

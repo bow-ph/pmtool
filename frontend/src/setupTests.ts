@@ -38,7 +38,7 @@ global.ResizeObserver = class ResizeObserver {
 // Mock global import.meta
 const mockImportMeta = {
   env: {
-    VITE_API_URL: 'http://localhost:8000',
+    VITE_API_URL: 'https://admin.docuplanai.com',
     MODE: 'test'
   }
 };
