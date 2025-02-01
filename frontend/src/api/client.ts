@@ -32,6 +32,8 @@ export const queryClient = new QueryClient({
 // API endpoints
 export const endpoints = {
   analyzePdf: (projectId: number) => `/projects/${projectId}/analyze-pdf`,
+  uploadPdf: (projectId: number) => `/projects/${projectId}/upload-pdf`,
+  getUploadedPdfs: (projectId: number) => `/projects/${projectId}/uploaded-pdfs`,
   getProactiveHints: (projectId: number) => `/projects/${projectId}/proactive-hints`,
   getMySubscription: () => `/subscriptions/me`,
   checkProjectLimit: () => `/subscriptions/me/project-limit`,

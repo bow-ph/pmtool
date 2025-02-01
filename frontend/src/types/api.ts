@@ -148,3 +148,14 @@ export interface CalDAVResponse {
   tasks: CalDAVTask[];
   caldav_url: string;
 }
+
+export interface UploadedPdfFile {
+  filename: string;
+  stored_filename: string;
+  upload_time: string;
+  file_url: string;
+}
+
+export interface UploadPdfResponse extends UploadedPdfFile {
+  status?: string;
+}
