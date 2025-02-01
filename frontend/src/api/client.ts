@@ -4,7 +4,7 @@ import { QueryClient } from '@tanstack/react-query';
 // Create axios instance with default config
 
 export const apiClient = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: 'https://admin.docuplanai.com/api/v1',
   headers: {
     'Content-Type': 'application/json'
   },
