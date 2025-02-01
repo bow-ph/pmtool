@@ -69,7 +69,7 @@ const PDFAnalysisContainer: React.FC<PDFAnalysisContainerProps> = ({ projectId }
 
       {analysisResult && (
         <>
-          {analysisResult.hints && (
+          {analysisResult.hints && analysisResult.hints.length > 0 && (
             <ProactiveHintsPanel
               data={analysisResult}
               projectId={projectId}

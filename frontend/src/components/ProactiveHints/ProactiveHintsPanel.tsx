@@ -4,7 +4,9 @@ import { apiClient } from '@/api/client';
 import { PdfAnalysisResponse, Hint } from '../../types/api';
 
 interface ProactiveHintsPanelProps {
-  data: PdfAnalysisResponse;
+  data: {
+    hints: Hint[];
+  };
   projectId: number;
 }
 
