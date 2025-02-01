@@ -293,9 +293,14 @@ class PDFAnalysisService:
                 raise ValueError(f"Project {project_id} not found")
 
             # Sync with CalDAV
+            # First commit the task to ensure it exists in the database
+            self.db.commit()
+
+            # Then try to sync with CalDAV
             try:
                 print(f"Starting CalDAV sync for task {task.id} in project {project_id}")
                 caldav_service = CalDAVService()
+                caldav_service._init_storage()  # Initialize storage
                 
                 # Get user email for calendar path
                 user = self.db.query(User).filter(User.id == project.user_id).first()
@@ -304,16 +309,6 @@ class PDFAnalysisService:
                     
                 calendar_path = f"{user.email}/calendar"
                 print(f"Using calendar path: {calendar_path}")
-                
-                # Create calendar if it doesn't exist
-                collection = caldav_service.storage.discover(calendar_path)
-                if not collection:
-                    print(f"Creating calendar for user {user.email}")
-                    caldav_service.create_calendar(user.email)
-                    collection = caldav_service.storage.discover(calendar_path)
-                    if not collection:
-                        raise ValueError(f"Failed to create/verify calendar at {calendar_path}")
-                print(f"Calendar verified at {calendar_path}")
                 
                 # Prepare task data for sync
                 caldav_task_data = {
@@ -331,29 +326,43 @@ class PDFAnalysisService:
                     "confidence_rationale": task.confidence_rationale
                 }
                 
-                # Use sync_task_with_calendar for more reliable sync
-                event_uid = caldav_service.sync_task_with_calendar(caldav_task_data, calendar_path)
-                if event_uid:
-                    task.caldav_event_uid = event_uid
-                    print(f"Successfully synced task {task.id} with CalDAV event {event_uid}")
-                    # Commit the changes to ensure caldav_event_uid is saved
-                    self.db.commit()
-                else:
-                    print(f"Warning: Failed to get event UID for task {task.id}")
+                # Try to sync with CalDAV but don't let failures affect task creation
+                try:
+                    event_uid = caldav_service.sync_task_with_calendar(caldav_task_data, calendar_path)
+                    if event_uid:
+                        task.caldav_event_uid = event_uid
+                        print(f"Successfully synced task {task.id} with CalDAV event {event_uid}")
+                        self.db.commit()  # Commit the CalDAV UID update
+                except Exception as caldav_error:
+                    print(f"Warning: CalDAV sync failed but task was created: {str(caldav_error)}")
             except Exception as e:
                 print(f"Warning: Failed to sync task with CalDAV: {str(e)}")
-                # Continue without CalDAV sync - don't block task creation
-                self.db.rollback()  # Rollback any partial changes from failed sync
+                # Continue without CalDAV sync - task is already saved
+
+            # Get planned timeframe from task data
+            planned_timeframe = task_data.get("planned_timeframe", "")
+            if not planned_timeframe:
+                start_date = datetime.now()
+                end_date = start_date + timedelta(hours=float(task.duration_hours or task.estimated_hours))
+                planned_timeframe = f"{start_date.strftime('%Y-%m-%d')} - {end_date.strftime('%Y-%m-%d')}"
 
             created_tasks.append({
+                "title": task.title,
                 "description": task.description,
                 "duration_hours": task.duration_hours,
                 "hourly_rate": task.hourly_rate,
                 "estimated_hours": task.estimated_hours,
                 "priority": task.priority,
+                "complexity": task.priority,
+                "confidence": task.confidence_score,
                 "confidence_score": task.confidence_score,
                 "confidence_rationale": task.confidence_rationale,
-                "caldav_event_uid": task.caldav_event_uid
+                "caldav_event_uid": task.caldav_event_uid,
+                "status": task.status,
+                "requires_client_input": False,
+                "technical_requirements": [],
+                "deliverables": [],
+                "planned_timeframe": planned_timeframe
             })
         
         try:

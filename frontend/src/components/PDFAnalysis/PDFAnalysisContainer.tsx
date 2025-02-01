@@ -52,14 +52,20 @@ const PDFAnalysisContainer: React.FC<PDFAnalysisContainerProps> = ({ projectId }
 
       {isUploading && (
         <div className="mt-4">
-          <p className="text-blue-500 text-sm">PDF wird hochgeladen...</p>
-          <div className="relative w-full bg-gray-200 rounded h-4 mt-2">
+          <p className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 font-medium">
+            PDF wird hochgeladen...
+          </p>
+          <div className="relative w-full h-4 mt-2 bg-gradient-to-r from-blue-400/20 via-purple-400/20 to-pink-400/20 rounded-full overflow-hidden">
             <div
-              className="absolute top-0 left-0 h-4 bg-blue-500 rounded"
+              className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full transition-all duration-300 ease-out"
               style={{ width: `${uploadProgress}%` }}
-            ></div>
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent animate-shimmer"></div>
+            </div>
           </div>
-          <p className="text-sm text-gray-500 mt-1">{uploadProgress}% hochgeladen</p>
+          <p className="text-sm text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 font-medium mt-1">
+            {uploadProgress}% hochgeladen
+          </p>
         </div>
       )}
 
@@ -91,10 +97,17 @@ const PDFAnalysisContainer: React.FC<PDFAnalysisContainerProps> = ({ projectId }
             }}
           />
           {pdfUrl && (
-            <div className="mt-6 border rounded-lg overflow-hidden">
+            <div className="mt-6 rounded-lg overflow-hidden transform transition-all duration-300 hover:scale-[1.01] hover:shadow-xl">
+              <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 p-1">
+                <div className="bg-white rounded-t-lg px-4 py-2 flex items-center justify-between">
+                  <h3 className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 font-medium">
+                    Hochgeladenes PDF
+                  </h3>
+                </div>
+              </div>
               <iframe
                 src={pdfUrl}
-                className="w-full h-[600px]"
+                className="w-full h-[600px] border-0"
                 title="Uploaded PDF"
               />
             </div>

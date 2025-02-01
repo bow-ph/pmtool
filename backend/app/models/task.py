@@ -26,3 +26,25 @@ class Task(Base):
 
     # Relationships
     project = relationship("Project", back_populates="tasks")
+
+    def to_dict(self):
+        task_dict = {
+            "id": self.id,
+            "title": self.title or self.description or "Untitled Task",
+            "description": self.description,
+            "estimated_hours": self.estimated_hours,
+            "actual_hours": self.actual_hours,
+            "duration_hours": self.duration_hours,
+            "hourly_rate": self.hourly_rate,
+            "status": self.status or "pending",
+            "priority": self.priority or "medium",
+            "confidence_score": self.confidence_score,
+            "confidence_rationale": self.confidence_rationale,
+            "project_id": self.project_id,
+            "caldav_event_uid": self.caldav_event_uid,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
+        # Always include confidence field for test compatibility
+        task_dict["confidence"] = self.confidence_score
+        return task_dict

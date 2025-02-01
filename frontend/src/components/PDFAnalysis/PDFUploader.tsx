@@ -88,23 +88,37 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({
   return (
     <div
       {...getRootProps()}
-      className={`p-8 border-2 border-dashed rounded-lg text-center cursor-pointer transition-colors ${
-        isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+      className={`p-8 border-2 border-dashed rounded-lg text-center cursor-pointer transition-all duration-300 transform hover:scale-[1.02] ${
+        isDragActive 
+          ? 'border-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 shadow-lg' 
+          : 'border-gray-300 hover:border-transparent hover:bg-gradient-to-r hover:from-blue-400/20 hover:via-purple-400/20 hover:to-pink-400/20'
       }`}
     >
       <input {...getInputProps()} />
-      {uploadMutation.status === 'pending' ? ( // Status "pending" verwenden
+      {uploadMutation.status === 'pending' ? (
         <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
-          <p className="text-gray-600">PDF wird hochgeladen...</p>
+          <div className="relative w-16 h-16 mb-3">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-lg animate-pulse"></div>
+            <div className="absolute inset-1 bg-white rounded-lg flex items-center justify-center">
+              <svg className="w-8 h-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/>
+              </svg>
+            </div>
+          </div>
+          <p className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 font-medium">
+            PDF wird hochgeladen...
+          </p>
         </div>
       ) : (
         <div>
           {isDragActive ? (
-            <p className="text-blue-500">PDF hier ablegen...</p>
+            <p className="text-white font-medium text-lg">PDF hier ablegen...</p>
           ) : (
             <div className="space-y-2">
-              <p className="text-gray-600">PDF hier ablegen oder klicken zum Hochladen</p>
+              <p className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 font-medium text-lg">
+                PDF hier ablegen oder klicken zum Hochladen
+              </p>
               <p className="text-sm text-gray-500">(Nur PDF-Dateien, max. 10 MB)</p>
             </div>
           )}
