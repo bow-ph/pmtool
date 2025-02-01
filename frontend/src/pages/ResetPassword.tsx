@@ -19,7 +19,7 @@ export default function ResetPasswordPage() {
     setIsLoading(true);
 
     try {
-      const response = await apiClient.post(`/api/v1/auth/reset-password/${encodeURIComponent(email)}`);
+      await apiClient.post(`/api/v1/auth/reset-password/${encodeURIComponent(email)}`);
       toast.success('If an account exists with this email, you will receive password reset instructions.');
       navigate('/login');
     } catch (error) {
