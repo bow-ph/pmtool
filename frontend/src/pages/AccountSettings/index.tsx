@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { AccountTabs } from './Tabs';
-import { cn } from "../../lib/utils";
+import { cn } from "../../utils";
 
 export default function AccountSettings() {
   return (
