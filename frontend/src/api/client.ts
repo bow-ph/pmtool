@@ -2,21 +2,22 @@ import axios from 'axios';
 import { QueryClient } from '@tanstack/react-query';
 
 // Create axios instance with default config
-const getBaseUrl = () => {
-  try {
-    return import.meta.env.VITE_API_URL;
-  } catch {
-    // For test environment
-    return 'http://localhost:8000';
-  }
-};
 
 export const apiClient = axios.create({
-  baseURL: getBaseUrl() || 'https://admin.docuplanai.com',
+  baseURL: 'https://admin.docuplanai.com/api/v1',
   headers: {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBwbXRvb2wudGVzdCIsImV4cCI6MTczODMxMjMwNX0.c_9LN8Z2xU9IVa9Ee2-bXxY-vjD8PkKQxCmu--346uY'
+    'Content-Type': 'application/json'
   },
+});
+
+// Add auth token to requests if it exists
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token');
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 // Create react-query client
@@ -35,7 +36,16 @@ export const endpoints = {
   uploadPdf: (projectId: number) => `/projects/${projectId}/upload-pdf`,
   getUploadedPdfs: (projectId: number) => `/projects/${projectId}/uploaded-pdfs`,
   getProactiveHints: (projectId: number) => `/projects/${projectId}/proactive-hints`,
-  getMySubscription: () => `/subscriptions/me`,
-  checkProjectLimit: () => `/subscriptions/me/project-limit`,
-  cancelSubscription: () => `/subscriptions/me/cancel`,
+  getTasks: () => '/tasks',
+  getTask: (taskId: number) => `/tasks/${taskId}`,
+  createTask: () => '/tasks',
+  updateTask: (taskId: number) => `/tasks/${taskId}`,
+  deleteTask: (taskId: number) => `/tasks/${taskId}`,
+  getPackages: () => '/packages',
+  getSubscriptions: () => '/admin/subscriptions',
+  getInvoices: () => '/admin/invoices',
+  // User subscription endpoints
+  getMySubscription: () => '/subscriptions/me',
+  checkProjectLimit: () => '/subscriptions/me/project-limit',
+  cancelSubscription: () => '/subscriptions/me/cancel',
 };

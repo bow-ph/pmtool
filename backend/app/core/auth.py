@@ -10,10 +10,17 @@ from app.core.database import get_db
 from app.models.user import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        print(f"Verifying password with hash: {hashed_password}")
+        result = pwd_context.verify(plain_password, hashed_password)
+        print(f"Password verification result: {result}")
+        return result
+    except Exception as e:
+        print(f"Password verification error: {str(e)}")
+        return False
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)

@@ -5,7 +5,7 @@ import { SubscriptionResponse } from '../types/api';
 interface CreateCustomerParams {
   name: string;
   email: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string | number | boolean>;
 }
 
 interface CreateSubscriptionParams {
@@ -52,7 +52,7 @@ export function usePayment() {
     },
   });
 
-  const getSubscriptions = (customerId: string) =>
+  const useSubscriptions = (customerId: string) =>
     useQuery({
       queryKey: ['subscriptions', customerId],
       queryFn: async () => {
@@ -68,6 +68,6 @@ export function usePayment() {
     createCustomer,
     createSubscription,
     cancelSubscription,
-    getSubscriptions,
+    useSubscriptions,
   };
 }

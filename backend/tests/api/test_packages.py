@@ -18,7 +18,7 @@ def test_list_packages(client, db_session, test_package):
     assert packages[0]["name"] == test_package.name
     assert packages[0]["price"] == test_package.price
 
-def test_create_package_unauthorized(client, db_session):
+def test_create_package_unauthorized(client, db_session, test_user):
     """Test that non-admin users cannot create packages"""
     package_data = {
         "name": "New Package",
@@ -30,14 +30,14 @@ def test_create_package_unauthorized(client, db_session):
         "button_text": "Get Started"
     }
     
-    # With non-admin user token
-    headers = {"Authorization": "Bearer test_token"}
-    with patch('app.core.auth.get_current_user') as mock_auth:
-        mock_auth.return_value = User(id=1, email="test@example.com", is_superuser=False)
-        response = client.post("/api/v1/packages/", json=package_data, headers=headers)
-        assert response.status_code == 403
+    # Create access token for regular user
+    from app.core.auth import create_access_token
+    access_token = create_access_token({"sub": test_user.email})
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = client.post("/api/v1/packages/", json=package_data, headers=headers)
+    assert response.status_code == 403
 
-def test_create_package_authorized(client, db_session):
+def test_create_package_authorized(client, db_session, admin_user):
     """Test package creation by admin"""
     package_data = {
         "name": "New Package",
@@ -48,52 +48,44 @@ def test_create_package_authorized(client, db_session):
         "features": ["Feature 1", "Feature 2"],
         "button_text": "Get Started"
     }
-    headers = {"Authorization": "Bearer test_token"}
-    with patch('app.core.auth.get_current_user') as mock_auth:
-        mock_auth.return_value = User(id=1, email="test@example.com", is_superuser=True)
-        response = client.post("/api/v1/packages/", json=package_data, headers=headers)
-        assert response.status_code == 201
-        data = response.json()
-        assert data["name"] == package_data["name"]
-        assert data["price"] == package_data["price"]
-        assert data["interval"] == package_data["interval"]
-        assert data["max_projects"] == package_data["max_projects"]
-        assert data["interval"] == package_data["interval"]
-        assert data["max_projects"] == package_data["max_projects"]
-        assert data["features"] == package_data["features"]
-        assert data["button_text"] == package_data["button_text"]
+    headers = {"Authorization": f"Bearer {admin_user['token']}"}
+    response = client.post("/api/v1/packages/", json=package_data, headers=headers)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["name"] == package_data["name"]
+    assert data["price"] == package_data["price"]
+    assert data["interval"] == package_data["interval"]
+    assert data["max_projects"] == package_data["max_projects"]
+    assert data["features"] == package_data["features"]
+    assert data["button_text"] == package_data["button_text"]
 
-def test_update_package(db_session, test_package):
+def test_update_package(client, db_session, test_package, admin_user):
     """Test updating a package"""
     update_data = {
         "price": 199.99,
         "description": "Updated Description"
     }
-    headers = {"Authorization": "Bearer test_token"}
-    with patch('app.core.auth.get_current_user') as mock_auth:
-        mock_auth.return_value = User(id=1, email="test@example.com", is_superuser=True)
-        response = client.put(
-            f"/api/v1/packages/{test_package.id}",
-            json=update_data,
-            headers=headers
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["price"] == update_data["price"]
-        assert data["description"] == update_data["description"]
+    headers = {"Authorization": f"Bearer {admin_user['token']}"}
+    response = client.put(
+        f"/api/v1/packages/{test_package.id}",
+        json=update_data,
+        headers=headers
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["price"] == update_data["price"]
+    assert data["description"] == update_data["description"]
 
-def test_delete_package(db_session, test_package):
+def test_delete_package(client, db_session, test_package, admin_user):
     """Test soft deleting a package"""
-    headers = {"Authorization": "Bearer test_token"}
-    with patch('app.core.auth.get_current_user') as mock_auth:
-        mock_auth.return_value = User(id=1, email="test@example.com", is_superuser=True)
-        response = client.delete(
-            f"/api/v1/packages/{test_package.id}",
-            headers=headers
-        )
-        assert response.status_code == 200
-        
-        # Verify package is not returned in list
-        response = client.get("/api/v1/packages")
-        packages = response.json()
-        assert not any(p["id"] == test_package.id for p in packages)
+    headers = {"Authorization": f"Bearer {admin_user['token']}"}
+    response = client.delete(
+        f"/api/v1/packages/{test_package.id}",
+        headers=headers
+    )
+    assert response.status_code == 200
+    
+    # Verify package is not returned in list
+    response = client.get("/api/v1/packages")
+    packages = response.json()
+    assert not any(p["id"] == test_package.id for p in packages)

@@ -1,15 +1,25 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useMutation, useQuery } from '@tanstack/react-query';
+
 import { apiClient, endpoints } from '../../api/client';
 import { PdfAnalysisResponse, UploadedPdfFile } from '../../types/api';
 import { FileList } from './FileList';
 import { CheckCircle2 } from 'lucide-react';
 
+interface UploadResponse {
+  pdf_url: string;
+}
+
 interface PDFUploaderProps {
   projectId: number;
   onAnalysisComplete: (result: PdfAnalysisResponse) => void;
+  onUploadProgress?: (progress: number) => void;
+  onUploadStart?: () => void;
+  onError?: (error: string) => void;
+  onPdfUploaded?: (pdfUrl: string) => void;
 }
+
 
 const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -48,13 +58,21 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete
       // Then analyze it
       const response = await apiClient.post(
         endpoints.analyzePdf(projectId),
+
         formData,
         {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
+          onUploadProgress: (progressEvent) => {
+            if (onUploadProgress && progressEvent.total) {
+              const progress = (progressEvent.loaded / progressEvent.total) * 100;
+              onUploadProgress(progress);
+            }
+          },
         }
       );
+
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2000);
       return response.data;
@@ -63,14 +81,26 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete
       onAnalysisComplete(data);
       refetchFiles();
       setUploadProgress(0);
+
     },
+    onSuccess: onAnalysisComplete,
+    onError: (error) => onError?.(error.message)
   });
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      uploadMutation.mutate(acceptedFiles[0]);
-    }
-  }, [uploadMutation]);
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      if (acceptedFiles.length > 0) {
+        const file = acceptedFiles[0];
+        if (file.size > 10 * 1024 * 1024) {
+          onError?.('Die Datei darf nicht größer als 10 MB sein.');
+          return;
+        }
+        onUploadStart?.();
+        uploadMutation.mutate(file);
+      }
+    },
+    [uploadMutation, onUploadStart, onError]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -81,6 +111,7 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete
   });
 
   return (
+
     <div className="space-y-4">
       <div
         {...getRootProps()}
@@ -131,6 +162,7 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete
       </div>
       {uploadedFiles && uploadedFiles.length > 0 && (
         <FileList files={uploadedFiles} />
+
       )}
     </div>
   );

@@ -17,7 +17,7 @@ const EditClientModal: React.FC<EditClientModalProps> = ({ client, onSave, onClo
     shipping_address: client.shipping_address || '',
     phone_number: client.phone_number || '',
     contact_person: client.contact_person || '',
-    notes: (client as any).notes || '',  // Type assertion for backward compatibility
+    notes: client.notes || '',  // Optional field
   });
 
   const handleSubmit = (e: React.FormEvent) => {

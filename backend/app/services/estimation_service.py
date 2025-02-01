@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 import json
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.task import Task
 from app.models.project import Project
@@ -161,27 +162,52 @@ class EstimationService:
         Returns:
             Dict containing analysis results and recommendations
         """
-        # Get project statistics and tasks
-        project_stats = self.get_project_estimation_stats(project_id)
-        tasks = self.db.query(Task).filter(Task.project_id == project_id).all()
-        
-        # Convert tasks to dictionary format
-        task_data = [
-            {
-                "id": task.id,
-                "description": task.description,
-                "estimated_hours": task.estimated_hours,
-                "actual_hours": task.actual_hours,
-                "status": task.status,
-                "confidence_score": task.confidence_score
-            }
-            for task in tasks
-        ]
-        
         try:
+            # Get project and validate it exists
+            project = self.db.query(Project).filter(Project.id == project_id).first()
+            if not project:
+                raise HTTPException(status_code=404, detail="Project not found")
+
+            # Get project statistics and tasks
+            project_stats = self.get_project_estimation_stats(project_id)
+            if project_stats.get("status") != "analyzed":
+                raise HTTPException(
+                    status_code=400,
+                    detail="Insufficient project data for analysis"
+                )
+
+            tasks = self.db.query(Task).filter(Task.project_id == project_id).all()
+            if not tasks:
+                raise HTTPException(
+                    status_code=400,
+                    detail="No tasks found for analysis"
+                )
+            
+            # Convert tasks to dictionary format
+            task_data = [
+                {
+                    "id": task.id,
+                    "description": task.description,
+                    "estimated_hours": task.estimated_hours,
+                    "actual_hours": task.actual_hours,
+                    "status": task.status,
+                    "confidence_score": task.confidence_score,
+                    "priority": task.priority
+                }
+                for task in tasks
+            ]
+            
+            # Format project stats for OpenAI analysis
+            formatted_stats = {
+                "total_estimated_hours": project_stats["total_estimated_hours"],
+                "total_actual_hours": project_stats["total_actual_hours"],
+                "average_deviation_percentage": project_stats["average_deviation_percentage"],
+                "accuracy_rating": project_stats["overall_accuracy_rating"]
+            }
+            
             # Get financial impact analysis from OpenAI
             analysis = await self.openai_service.analyze_financial_impact(
-                project_stats=project_stats,
+                project_stats=formatted_stats,
                 tasks=task_data
             )
             
@@ -192,13 +218,17 @@ class EstimationService:
                 else:
                     analysis_result = analysis
             except json.JSONDecodeError:
-                raise ValueError("Invalid response format from OpenAI")
+                raise HTTPException(
+                    status_code=500,
+                    detail="Invalid response format from OpenAI"
+                )
                 
-            # Validate time estimates if we have enough data
-            if len(tasks) > 0:
+            # Get historical data for time validation
+            historical_data = self.detect_estimation_patterns(project.user_id)
+            if historical_data["status"] == "analyzed":
                 validation_result = await self.openai_service.validate_time_estimates(
                     tasks=task_data,
-                    historical_data=self.detect_estimation_patterns(project_stats["project_id"])
+                    historical_data=historical_data
                 )
                 if isinstance(validation_result, str):
                     validation_data = json.loads(validation_result)
@@ -209,14 +239,30 @@ class EstimationService:
             
             return {
                 "status": "success",
-                "financial_impact": analysis_result.get("financial_impact", {}),
-                "time_impact": analysis_result.get("time_impact", {}),
+                "financial_impact": analysis_result.get("financial_impact", {
+                    "risk_level": "medium",
+                    "potential_cost_overrun": 0.0,
+                    "confidence": 0.0
+                }),
+                "time_impact": analysis_result.get("time_impact", {
+                    "risk_level": "medium",
+                    "potential_delay_hours": 0.0,
+                    "confidence": 0.0
+                }),
                 "recommendations": analysis_result.get("recommendations", []),
-                "time_validation": analysis_result.get("time_validation", {})
+                "time_validation": analysis_result.get("time_validation", {
+                    "validated_tasks": [],
+                    "overall_assessment": {
+                        "estimation_quality": "needs_review",
+                        "suggestions": []
+                    }
+                })
             }
             
+        except HTTPException:
+            raise
         except Exception as e:
-            return {
-                "status": "error",
-                "message": f"Error generating proactive hints: {str(e)}"
-            }
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error generating proactive hints: {str(e)}"
+            )

@@ -1,18 +1,16 @@
 import '@testing-library/jest-dom';
+import { jest } from '@jest/globals';
 
 declare global {
-  namespace jest {
-    interface Matchers<R> {
-      toBeInTheDocument(): R;
-      toHaveClass(className: string): R;
-      toBeVisible(): R;
-      toBeDisabled(): R;
-      toHaveAttribute(attr: string, value?: string): R;
-      toHaveTextContent(text: string | RegExp): R;
-    }
+  interface JestMatchers<R = void> {
+    toBeInTheDocument(): R;
+    toHaveClass(className: string): R;
+    toBeVisible(): R;
+    toBeDisabled(): R;
+    toHaveAttribute(attr: string, value?: string): R;
+    toHaveTextContent(text: string | RegExp): R;
   }
 }
-import { jest } from '@jest/globals';
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -37,11 +35,16 @@ global.ResizeObserver = class ResizeObserver {
 };
 
 // Mock import.meta
-(global as any).import = {
-  meta: {
-    env: {
-      VITE_API_URL: 'http://localhost:8000',
-      MODE: 'test'
-    }
+// Mock global import.meta
+const mockImportMeta = {
+  env: {
+    VITE_API_URL: 'https://admin.docuplanai.com',
+    MODE: 'test'
   }
 };
+
+Object.defineProperty(global, 'import', {
+  value: { meta: mockImportMeta },
+  writable: true,
+  configurable: true
+});

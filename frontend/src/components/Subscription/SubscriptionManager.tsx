@@ -13,7 +13,7 @@ const SubscriptionManager: React.FC = () => {
   const { data: subscription, isLoading } = useQuery<Subscription>({
     queryKey: ['subscription', 'me'],
     queryFn: async () => {
-      const response = await apiClient.get(endpoints.getMySubscription());
+      const response = await apiClient.get(endpoints.getSubscriptions() + '/me');
       return response.data;
     },
   });
@@ -21,14 +21,14 @@ const SubscriptionManager: React.FC = () => {
   const { data: projectLimit } = useQuery({
     queryKey: ['subscription', 'project-limit'],
     queryFn: async () => {
-      const response = await apiClient.get(endpoints.checkProjectLimit());
+      const response = await apiClient.get(endpoints.getSubscriptions() + '/me/project-limit');
       return response.data;
     },
   });
 
   const cancelMutation = useMutation({
     mutationFn: async (data: CancellationRequest) => {
-      const response = await apiClient.post(endpoints.cancelSubscription(), data);
+      const response = await apiClient.post(endpoints.getSubscriptions() + '/me/cancel', data);
       return response.data;
     },
     onSuccess: () => {
