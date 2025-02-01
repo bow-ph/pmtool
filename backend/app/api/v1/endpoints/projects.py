@@ -22,7 +22,7 @@ class ProjectResponse(BaseModel):
 
 router = APIRouter()
 
-@router.post("/", response_model=ProjectResponse)
+@router.post("", response_model=ProjectResponse)
 async def create_project(
     project_data: ProjectCreate,
     current_user: User = Depends(get_current_user),
