@@ -138,7 +138,7 @@ const ProjectAnalysis = () => {
               Fehler beim Abrufen der Hinweise: {(hintsError as Error)?.message || 'Unbekannter Fehler'}
             </p>
           ) : (
-            proactiveHints && <ProactiveHintsPanel data={proactiveHints} />
+            proactiveHints && <ProactiveHintsPanel data={{ hints: analysisResults?.hints || [] }} projectId={projectId} />
           )}
         </div>
       </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { apiClient } from '@/api/client';
-import { PdfAnalysisResponse, Hint } from '../../types/api';
+import { Hint } from '../../types/api';
 
 interface ProactiveHintsPanelProps {
   data: {
