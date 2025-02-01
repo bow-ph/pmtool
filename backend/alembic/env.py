@@ -34,7 +34,11 @@ fileConfig(config.config_file_name)
 target_metadata = Base.metadata
 
 def get_url():
-    return "postgresql://pmtool:pmtool@localhost/bow_db"
+    user = os.getenv("POSTGRES_USER", "pmtool")
+    password = os.getenv("POSTGRES_PASSWORD", "pmtool")
+    host = os.getenv("POSTGRES_HOST", "localhost")
+    db = os.getenv("POSTGRES_DB", "bow_db")
+    return f"postgresql://{user}:{password}@{host}/{db}"
 
 config.set_main_option("sqlalchemy.url", get_url())
 
