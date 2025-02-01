@@ -1,7 +1,7 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { apiClient } from '../api/client';
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 import {
   LayoutDashboard,
   Brain,
