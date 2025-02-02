@@ -12,10 +12,9 @@ const getBaseUrl = () => {
 
 // Ensure we're using the correct API version prefix
 const getApiUrl = (endpoint: string) => {
-  if (!endpoint.startsWith('/api/v1/')) {
-    return `/api/v1${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-  }
-  return endpoint;
+  // Remove any existing /api/v1/ prefix to prevent duplication
+  const cleanEndpoint = endpoint.replace(/^\/?(api\/v1\/)?/, '');
+  return cleanEndpoint.startsWith('/') ? cleanEndpoint : `/${cleanEndpoint}`;
 };
 
 export const apiClient = axios.create({
