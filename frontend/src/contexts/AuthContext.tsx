@@ -17,14 +17,14 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem('auth_token');
+    return localStorage.getItem('access_token');
   });
 
   useEffect(() => {
     if (token) {
-      localStorage.setItem('auth_token', token);
+      localStorage.setItem('access_token', token);
     } else {
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('access_token');
     }
   }, [token]);
 

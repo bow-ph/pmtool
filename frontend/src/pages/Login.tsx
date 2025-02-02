@@ -5,8 +5,10 @@ import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { apiClient, endpoints } from '../api/client';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function LoginPage() {
+  const { setToken } = useAuth();
   const [email, setEmail] = useState('admin@pmtool.test');
   const [password, setPassword] = useState('admin');
   const [error, setError] = useState('');
@@ -30,8 +32,7 @@ export default function LoginPage() {
         }
       });
 
-      localStorage.setItem('access_token', response.data.access_token);
-      apiClient.defaults.headers.Authorization = `Bearer ${response.data.access_token}`;
+      setToken(response.data.access_token);
       navigate('/');
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 'Login failed';
