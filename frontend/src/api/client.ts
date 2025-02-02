@@ -7,7 +7,7 @@ const getBaseUrl = () => {
   if (import.meta.env.DEV) {
     return 'http://localhost:8000';
   }
-  return 'https://admin.docuplanai.com';
+  return window.location.protocol === 'https:' ? 'https://admin.docuplanai.com' : 'http://admin.docuplanai.com';
 };
 
 // Ensure we're using the correct API version prefix
