@@ -19,8 +19,10 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+    console.log('Attempting login with:', { email, password });
 
     try {
+      console.log('Making API request to:', endpoints.login());
       const formData = new URLSearchParams();
       formData.append('username', email);
       formData.append('password', password);
@@ -31,6 +33,7 @@ export default function LoginPage() {
           'Content-Type': 'application/x-www-form-urlencoded'
         }
       });
+      console.log('Login response:', response.data);
 
       setToken(response.data.access_token);
       navigate('/');

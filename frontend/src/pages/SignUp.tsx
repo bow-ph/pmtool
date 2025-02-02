@@ -5,31 +5,44 @@ import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
 import { Label } from '../components/ui/label';
-import { apiClient } from '../api/client';
+import { apiClient, endpoints } from '../api/client';
 import { toast } from 'react-hot-toast';
+import { useForm } from 'react-hook-form';
+
+interface SignUpFormData {
+  email: string;
+  password: string;
+}
+
+interface ApiError {
+  response?: {
+    data?: {
+      detail?: string;
+    };
+  };
+}
 
 export default function SignUpPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [selectedPackage, setSelectedPackage] = useState('trial');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { register, handleSubmit, formState: { errors } } = useForm<SignUpFormData>();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: SignUpFormData) => {
     setIsLoading(true);
 
     try {
-      await apiClient.post('/api/v1/auth/register', {
-        email,
-        password,
+      await apiClient.post(endpoints.register(), {
+        email: data.email,
+        password: data.password,
         subscription_type: selectedPackage
       });
       
-      toast.success('Account created successfully!');
+      toast.success('Account created successfully! Please log in.');
       navigate('/login');
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || 'Registration failed';
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
+      const errorMessage = apiError.response?.data?.detail || 'Registration failed';
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -44,24 +57,38 @@ export default function SignUpPage() {
           <CardDescription>Sign up for DocuPlanAI</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
               <Input
                 type="email"
                 placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                {...register('email', { 
+                  required: 'Email is required',
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: 'Invalid email address'
+                  }
+                })}
               />
+              {errors.email && (
+                <p className="text-sm text-red-500">{errors.email.message as string}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Input
                 type="password"
                 placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                {...register('password', { 
+                  required: 'Password is required',
+                  minLength: {
+                    value: 8,
+                    message: 'Password must be at least 8 characters'
+                  }
+                })}
               />
+              {errors.password && (
+                <p className="text-sm text-red-500">{errors.password.message as string}</p>
+              )}
             </div>
             <div className="space-y-4">
               <Label>Select Package</Label>

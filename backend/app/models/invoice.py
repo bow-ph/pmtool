@@ -1,15 +1,16 @@
 from sqlalchemy import Column, Integer, Float, DateTime, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+from app.core.config import settings
 from datetime import datetime
 
 class Invoice(Base):
-    __tablename__ = "invoices"
+    __tablename__ = "test_invoices" if settings.DEBUG else "invoices"
 
     id = Column(Integer, primary_key=True, index=True)
     invoice_number = Column(String, unique=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    subscription_id = Column(Integer, ForeignKey("subscriptions.id"))
+    user_id = Column(Integer, ForeignKey("test_users.id" if settings.DEBUG else "users.id"))
+    subscription_id = Column(Integer, ForeignKey("test_subscriptions.id" if settings.DEBUG else "subscriptions.id"))
     issue_date = Column(DateTime, default=datetime.utcnow)
     
     # Financial information
