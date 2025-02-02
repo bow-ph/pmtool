@@ -27,13 +27,13 @@ export default function LoginPage() {
         username: email,
         password: password,
         grant_type: 'password'
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
       });
-      console.log('Login response:', response.data);
-
+      
+      if (!response.data.access_token) {
+        throw new Error('No access token received');
+      }
+      
+      console.log('Login successful');
       setToken(response.data.access_token);
       navigate('/');
     } catch (err: any) {
