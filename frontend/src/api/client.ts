@@ -10,6 +10,30 @@ const getBaseUrl = () => {
   return 'https://admin.docuplanai.com/api/v1';
 };
 
+// Configure axios defaults for production
+const setupAxiosDefaults = () => {
+  if (!import.meta.env.DEV) {
+    apiClient.defaults.headers['Access-Control-Allow-Origin'] = 'https://docuplanai.com';
+    apiClient.defaults.headers['Access-Control-Allow-Credentials'] = 'true';
+  }
+};</old_str>
+<new_str>const getBaseUrl = () => {
+  if (import.meta.env.DEV) {
+    return 'http://localhost:8000/api/v1';
+  }
+  return 'https://admin.docuplanai.com/api/v1';
+};
+
+// Configure axios defaults for production
+const setupAxiosDefaults = () => {
+  if (!import.meta.env.DEV) {
+    apiClient.defaults.headers['Access-Control-Allow-Origin'] = 'https://docuplanai.com';
+    apiClient.defaults.headers['Access-Control-Allow-Credentials'] = 'true';
+  }
+};
+
+setupAxiosDefaults();
+
 export const apiClient = axios.create({
   baseURL: getBaseUrl(),
   headers: {
@@ -21,7 +45,7 @@ export const apiClient = axios.create({
   }
 });
 
-// Add auth token to requests if it exists
+// Add auth token to requests if it exists and handle token refresh
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
 
@@ -30,6 +54,28 @@ apiClient.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Handle 401 responses and token refresh
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        // Clear the invalid token
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
+        return Promise.reject(error);
+      } catch (refreshError) {
+        return Promise.reject(refreshError);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Create react-query client
 export const queryClient = new QueryClient({
