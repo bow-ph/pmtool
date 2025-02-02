@@ -1,7 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from unittest.mock import patch, MagicMock
+from openai.error import RateLimitError
 import os
 import json
 import asyncio
@@ -110,8 +111,8 @@ async def test_analyze_pdf_with_retry(mock_pdf_content, mock_pdf_service, mock_o
     with patch('app.services.openai_service.OpenAIService.analyze_pdf_text') as mock_analyze:
         # Mock analyze_pdf_text to simulate failures and then success
         mock_analyze.side_effect = [
-            HTTPException(status_code=429, detail="Rate limit exceeded"),  # First attempt fails
-            HTTPException(status_code=429, detail="Rate limit exceeded"),  # Second attempt fails
+            RateLimitError("Rate limit exceeded"),  # First attempt fails
+            RateLimitError("Rate limit exceeded"),  # Second attempt fails
             mock_openai_response  # Third attempt succeeds
         ]
 
@@ -140,7 +141,7 @@ async def test_analyze_pdf_max_retries(mock_pdf_content, mock_pdf_service, mock_
     with patch('app.services.openai_service.OpenAIService.analyze_pdf_text') as mock_analyze:
         # Mock analyze_pdf_text to simulate consistent failures
         mock_analyze.side_effect = [
-            HTTPException(status_code=429, detail="Rate limit exceeded")
+            RateLimitError("Rate limit exceeded")
             for _ in range(5)  # Fail all 5 attempts
         ]
         
