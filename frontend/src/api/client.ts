@@ -10,6 +10,14 @@ const getBaseUrl = () => {
   return 'https://admin.docuplanai.com';
 };
 
+// Ensure we're using the correct API version prefix
+const getApiUrl = (endpoint: string) => {
+  if (!endpoint.startsWith('/api/v1/')) {
+    return `/api/v1${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  }
+  return endpoint;
+};
+
 export const apiClient = axios.create({
   baseURL: getBaseUrl(),
   headers: {
@@ -73,10 +81,10 @@ export const endpoints = {
   getInvoices: () => 'admin/invoices',
   // User subscription endpoints
   // Auth endpoints
-  login: () => '/api/v1/auth/login',
-  register: () => '/api/v1/auth/register',
-  resetPassword: (email: string) => `/api/v1/auth/reset-password/${email}`,
-  testToken: () => '/api/v1/auth/test-token',
+  login: () => getApiUrl('/auth/login'),
+  register: () => getApiUrl('/auth/register'),
+  resetPassword: (email: string) => getApiUrl(`/auth/reset-password/${email}`),
+  testToken: () => getApiUrl('/auth/test-token'),
   
   // Subscription endpoints
   getMySubscription: () => '/api/v1/subscriptions/me',
