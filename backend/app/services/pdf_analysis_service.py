@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Union
 import PyPDF2
 from fastapi import UploadFile, HTTPException
 from fastapi.responses import FileResponse
@@ -13,9 +13,9 @@ import tempfile
 import os
 from datetime import datetime, timedelta
 class PDFAnalysisService:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, test_mode: bool = False):
         self.db = db
-        self.openai_service = OpenAIService()
+        self.openai_service = OpenAIService(test_mode=test_mode)
         self.upload_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads", "pdfs")
         os.makedirs(self.upload_dir, exist_ok=True)
 
@@ -139,67 +139,89 @@ class PDFAnalysisService:
             
         return ' '.join(cleaned_lines)
 
-    async def extract_text_from_pdf(self, file: UploadFile) -> str:
-        """Extract text content from uploaded PDF file"""
-        if not file.filename.lower().endswith('.pdf'):
-            raise HTTPException(status_code=400, detail="Invalid file type. Only PDF files are supported.")
-            
+    async def extract_text_from_pdf(self, content: Union[str, bytes]) -> str:
+        """Extract text content from PDF content or file path"""
+        temp_file = None
         try:
-            content = await file.read()
-            if not content:
-                raise HTTPException(status_code=400, detail="Empty file received")
+            if isinstance(content, str):
+                if not content.lower().endswith('.pdf'):
+                    raise HTTPException(status_code=400, detail="Invalid file type. Only PDF files are supported.")
+                if not os.path.exists(content):
+                    raise HTTPException(status_code=404, detail="PDF file not found")
+                file_path = content
+            else:
+                if not bytes(content).startswith(b'%PDF-'):
+                    raise HTTPException(status_code=400, detail="Invalid file content. Not a valid PDF.")
+                temp_file = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False)
+                temp_file.write(content)
+                temp_file.close()
+                file_path = temp_file.name
             
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf', mode='wb') as tmp_file:
-                tmp_file.write(content)
-                tmp_file.flush()
-                os.fsync(tmp_file.fileno())
-                
-                try:
-                    import pdfplumber
-                    pdf_text = ""
-                    with pdfplumber.open(tmp_file.name) as pdf:
-                        if len(pdf.pages) == 0:
-                            raise HTTPException(status_code=400, detail="PDF file contains no pages")
-                        
-                        for page in pdf.pages:
-                            text = page.extract_text()
-                            if text:
-                                pdf_text += text + "\n"
-                        
-                        if not pdf_text.strip():
-                            raise HTTPException(status_code=400, detail="No text content found in PDF")
-                        
-                        await file.seek(0)
-                        return pdf_text
-                except Exception as e:
-                    print(f"PDF extraction error: {str(e)}")
-                    raise HTTPException(status_code=400, detail=f"Error extracting text from PDF: {str(e)}")
-                finally:
-                    os.unlink(tmp_file.name)
-                
+            try:
+                print(f"Starting PDF text extraction from: {file_path}")
+                import pdfplumber
+                pdf_text = ""
+                with pdfplumber.open(file_path) as pdf:
+                    print(f"PDF loaded successfully. Pages: {len(pdf.pages)}")
+                    if len(pdf.pages) == 0:
+                        raise HTTPException(status_code=400, detail="PDF file contains no pages")
+                    
+                    for i, page in enumerate(pdf.pages):
+                        print(f"Processing page {i + 1}/{len(pdf.pages)}")
+                        text = page.extract_text()
+                        if text:
+                            print(f"Extracted {len(text)} characters from page {i + 1}")
+                            pdf_text += text + "\n"
+                        else:
+                            print(f"Warning: No text extracted from page {i + 1}")
+                    
+                    if not pdf_text.strip():
+                        raise HTTPException(status_code=400, detail="No text content found in PDF")
+                    
+                    print(f"Total text extracted: {len(pdf_text)} characters")
+                    return pdf_text
+            except Exception as e:
+                print(f"PDF extraction error: {str(e)}")
+                raise HTTPException(status_code=400, detail=f"Error extracting text from PDF: {str(e)}")
+            finally:
+                if temp_file and os.path.exists(temp_file.name):
+                    os.unlink(temp_file.name)
+                    print(f"Cleaned up temporary file: {temp_file.name}")
         except HTTPException:
             raise
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Error processing PDF: {str(e)}")
 
-    async def analyze_pdf(self, project_id: int, file: UploadFile) -> Dict:
-        """Analyze PDF and create tasks with time estimates"""
-        # Extract text from PDF
-        pdf_text = await self.extract_text_from_pdf(file)
+    async def analyze_pdf(self, project_id: int, content: Union[str, bytes]) -> Dict:
+        """Analyze PDF content and create tasks with time estimates"""
+        # Handle both string content and file paths
+        pdf_text = content if isinstance(content, str) else await self.extract_text_from_pdf(content)
         if not pdf_text:
             raise HTTPException(status_code=400, detail="No text content found in PDF")
 
 
-        # Analyze text with OpenAI and parse JSON response
-        try:
-            response_str = await self.openai_service.analyze_pdf_text(pdf_text)
-            analysis_result = json.loads(response_str)
-
-        except json.JSONDecodeError:
-            raise HTTPException(status_code=500, detail="Error parsing OpenAI response")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error analyzing PDF: {str(e)}")
-
+        # Analyze text with OpenAI and parse JSON response with retries
+        max_retries = 5
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                response_str = await self.openai_service.analyze_pdf_text(pdf_text)
+                if isinstance(response_str, dict):
+                    analysis_result = response_str
+                else:
+                    analysis_result = json.loads(response_str)
+                if "tasks" in analysis_result and analysis_result["tasks"]:
+                    break
+                last_error = "No valid tasks found in analysis"
+            except json.JSONDecodeError as e:
+                last_error = f"Error parsing OpenAI response: {str(e)}"
+            except Exception as e:
+                last_error = f"Error analyzing PDF: {str(e)}"
+            
+            if attempt == max_retries - 1:
+                raise HTTPException(status_code=500, detail=last_error)
+        
         # Create tasks from analysis
         created_tasks = await self._create_tasks_from_analysis(project_id, analysis_result)
 
@@ -265,18 +287,30 @@ class PDFAnalysisService:
                     print(f"Warning: Could not parse planned_timeframe '{planned_timeframe}', using default")
 
             # Create task with required fields
+            # Handle numeric fields with safe defaults
+            try:
+                duration_hours = float(task_data.get("duration_hours") or task_data.get("estimated_hours") or 1.0)
+                hourly_rate = float(task_data.get("hourly_rate") or 920.0)
+                estimated_hours = float(task_data.get("estimated_hours") or duration_hours)
+                confidence_score = float(task_data.get("confidence") or 0.8)
+            except (TypeError, ValueError):
+                duration_hours = 1.0
+                hourly_rate = 920.0
+                estimated_hours = 1.0
+                confidence_score = 0.8
+
             task = Task(
                 project_id=project_id,
-                title=task_data.get("title", description.split('\n')[0][:100]),
+                title=task_data.get("title") or description.split('\n')[0][:100],
                 description=description,
-                duration_hours=float(task_data.get("duration_hours", estimated_hours)),
-                hourly_rate=float(task_data.get("hourly_rate", 920.0)),
+                duration_hours=duration_hours,
+                hourly_rate=hourly_rate,
                 estimated_hours=estimated_hours,
                 actual_hours=None,
                 status="pending",
                 priority=task_data.get("complexity", "medium").lower(),
-                confidence_score=float(task_data.get("confidence", 0.0)),
-                confidence_rationale=task_data.get("confidence_rationale", "")
+                confidence_score=confidence_score,
+                confidence_rationale=task_data.get("confidence_rationale") or ""
             )
             
             # Add to session and get ID
@@ -296,7 +330,7 @@ class PDFAnalysisService:
             try:
                 print(f"Starting CalDAV sync for task {task.id} in project {project_id}")
                 caldav_service = CalDAVService()
-                caldav_service._init_storage()  # Initialize storage
+                await caldav_service._init_storage()  # Initialize storage
                 
                 # Get user email for calendar path
                 user = self.db.query(User).filter(User.id == project.user_id).first()

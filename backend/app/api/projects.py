@@ -7,8 +7,11 @@ from datetime import datetime
 from app.core.database import get_db
 from app.services.pdf_analysis_service import PDFAnalysisService
 from app.services.estimation_service import EstimationService
+from app.services.caldav_service import CalDAVService
+from app.schemas.task import Task, TaskCreate
 
 router = APIRouter(prefix="/projects", tags=["projects"])
+caldav_service = CalDAVService()
 
 @router.post("/{project_id}/upload-pdf")
 async def upload_pdf(
@@ -112,3 +115,41 @@ async def get_proactive_hints(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating proactive hints: {str(e)}")
+
+@router.post("/{project_id}/tasks", response_model=List[Task])
+async def create_tasks(
+    project_id: int,
+    tasks: List[TaskCreate],
+    db: Session = Depends(get_db)
+) -> List[Task]:
+    """Create tasks from PDF analysis and sync with CalDAV"""
+    try:
+        # Create calendar if it doesn't exist
+        calendar_path = await caldav_service.create_calendar(project_id)
+        
+        created_tasks = []
+        for task_data in tasks:
+            # Add task to CalDAV calendar
+            task_dict = task_data.model_dump()
+            task_dict["project_id"] = project_id
+            
+            # Create task in CalDAV with retry mechanism
+            max_retries = 5
+            for attempt in range(max_retries):
+                try:
+                    await caldav_service.add_task(task_dict, calendar_path)
+                    break
+                except Exception as e:
+                    if attempt == max_retries - 1:
+                        raise e
+                    continue
+            
+            # Add to response
+            created_tasks.append(Task(**task_dict))
+        
+        return created_tasks
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create tasks: {str(e)}"
+        )

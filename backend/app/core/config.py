@@ -16,8 +16,8 @@ class Settings(BaseSettings):
 
     # Database Configuration
     DATABASE_NAME: str = os.getenv("DATABASE_NAME", "bow_db")
-    DATABASE_USER: str = os.getenv("DATABASE_USER", "pmtool")
-    DATABASE_PASSWORD: str = os.getenv("DATABASE_PASSWORD", "pmtool")
+    DATABASE_USER: str = os.getenv("DATABASE_USER", "bow")
+    DATABASE_PASSWORD: str = os.getenv("DATABASE_PASSWORD", "bow")
     DATABASE_HOST: str = os.getenv("DATABASE_HOST", "localhost")
 
     # Redis Configuration
@@ -89,7 +89,7 @@ class Settings(BaseSettings):
     SESSION_SECRET: str
 
     # Service Configuration
-    DEBUG: bool = False
+    DEBUG: bool = True
     ALLOWED_HOSTS: List[str] = ["admin.docuplanai.com", "localhost"]
 
     # Server Configuration

@@ -1,13 +1,15 @@
 from typing import Dict, List, Optional
 import os
 import json
+import time
+import random
 from openai import OpenAI, APIError, RateLimitError
 from fastapi import HTTPException
 
 class OpenAIService:
     """Service for handling OpenAI API interactions"""
     
-    def __init__(self):
+    def __init__(self, test_mode: bool = False):
         """Initialize the OpenAI service with API key from environment"""
         self.api_key = os.getenv("Open_AI_API")
         if not self.api_key:
@@ -19,6 +21,7 @@ class OpenAIService:
             max_retries=2,
             default_headers={"User-Agent": "DocuPlanAI/1.0"}
         )
+        self.test_mode = test_mode
         
     async def analyze_pdf_text(self, text: str) -> Dict:
         """
@@ -83,50 +86,84 @@ class OpenAIService:
                     }
                 }
             
-            response = self.client.chat.completions.create(
-                model="gpt-4",  # Using GPT-4 as specified by user
-                temperature=0.7,
-                messages=[
-                    {"role": "system", "content": """You are a project management assistant specialized in analyzing project documents and extracting tasks with time estimates. You have expertise in identifying document types and understanding their context. Format your response as JSON with the following structure:
+            max_retries = 5
+            last_error = None
+            base_delay = 2  # Base delay in seconds
+            
+            for attempt in range(max_retries):
+                # Check rate limits before making the request
+                try:
+                    test_response = self.client.chat.completions.with_raw_response.create(
+                        model="gpt-4",
+                        messages=[{"role": "system", "content": "test"}]
+                    )
+                    headers = test_response.headers
+                    remaining_requests = int(headers.get('x-ratelimit-remaining-requests', '60'))
+                    remaining_tokens = int(headers.get('x-ratelimit-remaining-tokens', '150000'))
+                    
+                    print(f"Rate limits - Requests: {remaining_requests}, Tokens: {remaining_tokens}")
+                    
+                    if remaining_requests <= 2 or remaining_tokens <= 1000:
+                        delay = 0.1 if self.test_mode else min(base_delay * (2 ** attempt), 32)
+                        print(f"Rate limit approaching, waiting {delay} seconds...")
+                        time.sleep(delay)
+                except Exception as e:
+                    print(f"Failed to check rate limits: {str(e)}")
+                    # Continue with the main request even if rate check fails
+                try:
+                    print(f"Attempting PDF analysis (attempt {attempt + 1}/{max_retries})")
+                    print(f"Text length: {len(text)} characters")
+                    
+                    # Truncate text if too long (GPT-4 context limit)
+                    max_text_length = 15000
+                    if len(text) > max_text_length:
+                        text = text[:max_text_length] + "\n[Text truncated due to length...]"
+                        print(f"Text truncated to {max_text_length} characters")
+                    
+                    response = self.client.chat.completions.create(
+                        model="gpt-4-1106-preview",
+                        temperature=0.7,
+                        messages=[
+                            {"role": "system", "content": """Du bist ein Projektmanagement-Assistent, der auf die Analyse von Projektdokumenten und die Extraktion von Aufgaben mit Zeitschätzungen spezialisiert ist. Antworte NUR mit validem JSON in diesem Format:
 {
     "document_analysis": {
         "type": "quote|order|proposal|specification|other",
-        "context": "Brief description of document context and purpose",
+        "context": "Kurze Zusammenfassung des Dokumentkontexts",
         "client_type": "agency|business|individual",
         "complexity_level": "low|medium|high",
         "clarity_score": float (0-1)
     },
     "tasks": [
         {
-            "title": "Task title",
-            "description": "Detailed task description",
+            "title": "Aufgabentitel",
+            "description": "Detaillierte Aufgabenbeschreibung",
             "duration_hours": float,
             "hourly_rate": float,
             "estimated_hours": float,
             "planned_timeframe": "YYYY-MM-DD - YYYY-MM-DD",
             "confidence": float (0-1),
-            "confidence_rationale": "Detailed explanation including task clarity, dependencies, and risks",
-            "dependencies": ["other task descriptions"],
+            "confidence_rationale": "Detaillierte Erklärung inkl. Aufgabenklarheit, Abhängigkeiten und Risiken",
+            "dependencies": ["andere Aufgabenbeschreibungen"],
             "complexity": "low|medium|high",
             "requires_client_input": boolean,
-            "technical_requirements": ["list of technical requirements"],
-            "deliverables": ["list of expected deliverables"]
+            "technical_requirements": ["Liste technischer Anforderungen"],
+            "deliverables": ["Liste erwarteter Ergebnisse"]
         }
     ],
     "hints": [
         {
-            "message": "Detailed hint message about potential issues or improvements",
-            "related_task": "Title of the related task",
+            "message": "Detaillierte Hinweise zu möglichen Problemen oder Verbesserungen",
+            "related_task": "Titel der zugehörigen Aufgabe",
             "priority": "low|medium|high",
             "impact": "cost|time|quality"
         }
     ],
     "total_estimated_hours": float,
-    "risk_factors": ["list of potential risks"],
+    "risk_factors": ["Liste potenzieller Risiken"],
     "confidence_analysis": {
         "overall_confidence": float (0-1),
-        "rationale": "Detailed explanation of overall confidence",
-        "improvement_suggestions": ["List of suggestions"],
+        "rationale": "Detaillierte Erklärung der Gesamtbewertung",
+        "improvement_suggestions": ["Liste von Vorschlägen"],
         "accuracy_factors": {
             "document_clarity": float (0-1),
             "technical_complexity": float (0-1),
@@ -135,36 +172,61 @@ class OpenAIService:
         }
     }
 }"""},
-                    {"role": "user", "content": f"Extract tasks and time estimates from this project document:\n\n{text}"}
-                ],
-                response_format={ "type": "json_object" }
-            )
-            content = response.choices[0].message.content
-            if isinstance(content, str):
-                try:
-                    result = json.loads(content)
-                    # Add task IDs and ensure required fields for frontend compatibility
-                    if "tasks" in result:
-                        for i, task in enumerate(result["tasks"], 1):
-                            task["id"] = i
-                            task["title"] = task.get("title", task.get("description", "Untitled Task"))
-                            task["confidence_score"] = task.get("confidence", 0.0)
-                            task["priority"] = task.get("complexity", "low").lower()
-                    return result
-                except json.JSONDecodeError as e:
-                    raise HTTPException(status_code=500, detail=f"Error parsing OpenAI response: {str(e)}")
-            return content
-        except RateLimitError as e:
-            raise HTTPException(
-                status_code=429,
-                detail=f"OpenAI API rate limit exceeded: {str(e)}"
-            )
-        except APIError as e:
-            status_code = getattr(e, 'status_code', 500)
-            raise HTTPException(
-                status_code=status_code,
-                detail=f"OpenAI API error: {str(e)}"
-            )
+                            {"role": "user", "content": f"Analysiere dieses Projektdokument und extrahiere Aufgaben mit Zeitschätzungen. Antworte NUR mit validem JSON:\n\n{text}"}
+                        ]
+                    )
+                    content = response.choices[0].message.content
+                    print(f"Received response from OpenAI (length: {len(content)} characters)")
+                    if isinstance(content, str):
+                        try:
+                            print("Attempting to parse JSON response")
+                            result = json.loads(content)
+                            if "tasks" in result and result["tasks"]:
+                                # Add task IDs and ensure required fields
+                                for i, task in enumerate(result["tasks"], 1):
+                                    task["id"] = i
+                                    task["title"] = task.get("title", task.get("description", "Untitled Task"))
+                                    task["confidence_score"] = float(task.get("confidence", 0.0))
+                                    task["priority"] = task.get("complexity", "low").lower()
+                                    task["estimated_hours"] = float(task.get("estimated_hours", task.get("duration_hours", 1.0)))
+                                    task["duration_hours"] = float(task.get("duration_hours", task.get("estimated_hours", 1.0)))
+                                    task["hourly_rate"] = float(task.get("hourly_rate", 80.0))
+                                print(f"Successfully analyzed PDF on attempt {attempt + 1}")
+                                return result
+                        except json.JSONDecodeError as e:
+                            last_error = f"Error parsing OpenAI response: {str(e)}"
+                            print(f"Attempt {attempt + 1} failed: {last_error}")
+                            if attempt == max_retries - 1:
+                                raise HTTPException(status_code=500, detail=last_error)
+                        except Exception as e:
+                            last_error = f"Error processing response: {str(e)}"
+                            print(f"Attempt {attempt + 1} failed: {last_error}")
+                            if attempt == max_retries - 1:
+                                raise HTTPException(status_code=500, detail=last_error)
+                except RateLimitError as e:
+                    last_error = f"OpenAI API rate limit exceeded: {str(e)}"
+                    print(f"Attempt {attempt + 1} failed: {last_error}")
+                    
+                    # Exponential backoff with jitter (shorter in test mode)
+                    delay = 0.1 if self.test_mode else min(base_delay * (2 ** attempt) + (random.random() * 2), 32)
+                    print(f"Rate limit exceeded, waiting {delay:.2f} seconds before retry...")
+                    time.sleep(delay)
+                    
+                    if attempt == max_retries - 1:
+                        raise HTTPException(status_code=429, detail=last_error)
+                except APIError as e:
+                    last_error = f"OpenAI API error: {str(e)}"
+                    print(f"Attempt {attempt + 1} failed: {last_error}")
+                    if attempt == max_retries - 1:
+                        raise HTTPException(status_code=getattr(e, 'status_code', 500), detail=last_error)
+                except Exception as e:
+                    last_error = f"Unexpected error: {str(e)}"
+                    print(f"Attempt {attempt + 1} failed: {last_error}")
+                    if attempt == max_retries - 1:
+                        raise HTTPException(status_code=500, detail=last_error)
+                
+            # If we get here, we've exhausted all retries
+            raise HTTPException(status_code=500, detail=last_error or "Failed to analyze PDF after all retries")
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Unexpected error in OpenAI service: {str(e)}")
             

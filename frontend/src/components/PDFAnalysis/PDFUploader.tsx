@@ -1,15 +1,10 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useMutation, useQuery } from '@tanstack/react-query';
-
 import { apiClient, endpoints } from '../../api/client';
 import { PdfAnalysisResponse, UploadedPdfFile } from '../../types/api';
 import { FileList } from './FileList';
 import { CheckCircle2 } from 'lucide-react';
-
-interface UploadResponse {
-  pdf_url: string;
-}
 
 interface PDFUploaderProps {
   projectId: number;
@@ -21,9 +16,18 @@ interface PDFUploaderProps {
 }
 
 
-const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete }) => {
+const PDFUploader: React.FC<PDFUploaderProps> = ({ 
+  projectId, 
+  onAnalysisComplete,
+  onUploadProgress,
+  onUploadStart,
+  onError,
+  onPdfUploaded 
+}) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [analyzingFile, setAnalyzingFile] = useState<string>();
+
 
   const { data: uploadedFiles, refetch: refetchFiles } = useQuery({
     queryKey: ['uploadedFiles', projectId],
@@ -39,7 +43,7 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete
       formData.append('file', file);
       
       // First upload the file
-      await apiClient.post(
+      const response = await apiClient.post(
         endpoints.uploadPdf(projectId),
         formData,
         {
@@ -50,40 +54,21 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete
             if (progressEvent.total) {
               const progress = (progressEvent.loaded / progressEvent.total) * 100;
               setUploadProgress(Math.round(progress));
+              onUploadProgress?.(progress);
             }
           },
         }
       );
       
-      // Then analyze it
-      const response = await apiClient.post(
-        endpoints.analyzePdf(projectId),
-
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          onUploadProgress: (progressEvent) => {
-            if (onUploadProgress && progressEvent.total) {
-              const progress = (progressEvent.loaded / progressEvent.total) * 100;
-              onUploadProgress(progress);
-            }
-          },
-        }
-      );
-
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2000);
+      onPdfUploaded?.(response.data.file_url);
       return response.data;
     },
-    onSuccess: (data) => {
-      onAnalysisComplete(data);
+    onSuccess: () => {
       refetchFiles();
       setUploadProgress(0);
-
     },
-    onSuccess: onAnalysisComplete,
     onError: (error) => onError?.(error.message)
   });
 
@@ -161,8 +146,38 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ projectId, onAnalysisComplete
         )}
       </div>
       {uploadedFiles && uploadedFiles.length > 0 && (
-        <FileList files={uploadedFiles} />
-
+        <FileList 
+          files={uploadedFiles}
+          onAnalyze={async (file) => {
+            if (!file.filename) {
+              onError?.('Keine Datei zum Analysieren gefunden');
+              return;
+            }
+            setAnalyzingFile(file.filename);
+            try {
+              const response = await apiClient.post(
+                endpoints.analyzePdf(projectId, file.filename),
+                null,
+                {
+                  headers: {
+                    'Content-Type': 'application/json',
+                  }
+                }
+              );
+              if (response.data && response.data.tasks && response.data.tasks.length > 0) {
+                onAnalysisComplete(response.data);
+              } else {
+                onError?.('Keine Aufgaben konnten aus dem PDF extrahiert werden.');
+              }
+            } catch (error) {
+              console.error('Analysis error:', error);
+              onError?.(error instanceof Error ? error.message : 'Analyse fehlgeschlagen');
+            } finally {
+              setAnalyzingFile(undefined);
+            }
+          }}
+          analyzingFile={analyzingFile}
+        />
       )}
     </div>
   );
