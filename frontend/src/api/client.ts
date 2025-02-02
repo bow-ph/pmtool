@@ -35,6 +35,7 @@ export const endpoints = {
   analyzePdf: (projectId: number) => `/projects/${projectId}/analyze-pdf`,
   uploadPdf: (projectId: number) => `/projects/${projectId}/upload-pdf`,
   getUploadedPdfs: (projectId: number) => `/projects/${projectId}/uploaded-pdfs`,
+  createTasks: (projectId: number) => `/projects/${projectId}/tasks`,
   getProactiveHints: (projectId: number) => `/projects/${projectId}/proactive-hints`,
   getTasks: () => '/tasks',
   getTask: (taskId: number) => `/tasks/${taskId}`,

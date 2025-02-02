@@ -163,9 +163,27 @@ const ProjectAnalysis = () => {
               </div>
               <button
                 className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                onClick={() => {
-                  // TODO: Implement dashboard integration
-                  console.log('Tasks to dashboard:', analysisResults.tasks);
+                onClick={async () => {
+                  try {
+                    await apiClient.post(
+                      endpoints.createTasks(projectId),
+                      {
+                        tasks: analysisResults.tasks.map(task => ({
+                          description: task.description,
+                          estimated_hours: task.estimated_hours,
+                          duration_hours: task.duration_hours,
+                          status: 'pending',
+                          priority: 'medium',
+                          confidence_score: task.confidence_score,
+                          confidence_rationale: task.confidence_rationale
+                        }))
+                      }
+                    );
+                    setAnalysisResults(null);
+                  } catch (error) {
+                    console.error('Failed to create tasks:', error);
+                    handleUploadError(error instanceof Error ? error.message : 'Failed to create tasks');
+                  }
                 }}
               >
                 Einplanen
