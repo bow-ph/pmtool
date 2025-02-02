@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from app.core.config import settings
 from app.api.v1.api import api_router
