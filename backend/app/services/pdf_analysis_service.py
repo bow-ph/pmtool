@@ -190,16 +190,28 @@ class PDFAnalysisService:
             raise HTTPException(status_code=400, detail="No text content found in PDF")
 
 
-        # Analyze text with OpenAI and parse JSON response
-        try:
-            response_str = await self.openai_service.analyze_pdf_text(pdf_text)
-            analysis_result = json.loads(response_str)
-
-        except json.JSONDecodeError:
-            raise HTTPException(status_code=500, detail="Error parsing OpenAI response")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error analyzing PDF: {str(e)}")
-
+        # Analyze text with OpenAI and parse JSON response with retries
+        max_retries = 5
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                response_str = await self.openai_service.analyze_pdf_text(pdf_text)
+                if isinstance(response_str, dict):
+                    analysis_result = response_str
+                else:
+                    analysis_result = json.loads(response_str)
+                if "tasks" in analysis_result and analysis_result["tasks"]:
+                    break
+                last_error = "No valid tasks found in analysis"
+            except json.JSONDecodeError as e:
+                last_error = f"Error parsing OpenAI response: {str(e)}"
+            except Exception as e:
+                last_error = f"Error analyzing PDF: {str(e)}"
+            
+            if attempt == max_retries - 1:
+                raise HTTPException(status_code=500, detail=last_error)
+        
         # Create tasks from analysis
         created_tasks = await self._create_tasks_from_analysis(project_id, analysis_result)
 
@@ -296,7 +308,7 @@ class PDFAnalysisService:
             try:
                 print(f"Starting CalDAV sync for task {task.id} in project {project_id}")
                 caldav_service = CalDAVService()
-                caldav_service._init_storage()  # Initialize storage
+                await caldav_service._init_storage()  # Initialize storage
                 
                 # Get user email for calendar path
                 user = self.db.query(User).filter(User.id == project.user_id).first()

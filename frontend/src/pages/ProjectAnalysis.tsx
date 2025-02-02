@@ -2,9 +2,9 @@ import { useState } from 'react';
 
 import PDFUploader from '../components/PDFAnalysis/PDFUploader';
 import AnalysisResults from '../components/PDFAnalysis/AnalysisResults';
-import ProactiveHintsPanel from '../components/ProactiveHints/ProactiveHintsPanel';
+
 import { FileList } from '../components/PDFAnalysis/FileList';
-import { PdfAnalysisResponse, ProactiveHintsResponse, UploadedPdfFile } from '../types/api';
+import { PdfAnalysisResponse, UploadedPdfFile } from '../types/api';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient, endpoints } from '@/api/client';
 
@@ -25,26 +25,7 @@ const ProjectAnalysis = () => {
     enabled: !!projectId,
   });
 
-  const { data: proactiveHints } = useQuery<ProactiveHintsResponse>({
 
-    queryKey: ['proactiveHints', projectId],
-    queryFn: async () => {
-      const response = await apiClient.get(endpoints.getProactiveHints(projectId));
-      const data = response.data as ProactiveHintsResponse;
-      
-      // Ensure all required properties are present with proper types
-      if (!data.status || !data.financial_impact || !data.time_impact || !data.recommendations) {
-        throw new Error('Unvollständige Daten von der API erhalten');
-      }
-      
-      return data;
-    },
-    enabled: !!projectId,
-  });
-
-  if (isHintsError && hintsError) {
-    console.error('Fehler beim Abrufen der proaktiven Hinweise:', hintsError);
-  }
 
   // Handle successful analysis
   const handleAnalysisComplete = (results: PdfAnalysisResponse) => {
@@ -112,7 +93,27 @@ const ProjectAnalysis = () => {
           
           {uploadedFiles && uploadedFiles.length > 0 && (
             <div className="mt-6">
-              <FileList files={uploadedFiles} />
+              <FileList 
+                files={uploadedFiles}
+                onAnalyze={async (file) => {
+                  try {
+                    const formData = new FormData();
+                    formData.append('file', file.stored_filename);
+                    const response = await apiClient.post(
+                      endpoints.analyzePdf(projectId),
+                      formData,
+                      {
+                        headers: {
+                          'Content-Type': 'multipart/form-data',
+                        }
+                      }
+                    );
+                    handleAnalysisComplete(response.data);
+                  } catch (error) {
+                    handleUploadError(error instanceof Error ? error.message : 'Analysis failed');
+                  }
+                }}
+              />
             </div>
           )}
           
@@ -141,17 +142,37 @@ const ProjectAnalysis = () => {
           )}
         </div>
 
-        {/* Proaktive Hinweise */}
+        {/* Analysierte Aufgaben */}
         <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Proaktive Hinweise</h2>
-          {isLoadingHints ? (
-            <p className="text-gray-500">Lade proaktive Hinweise...</p>
-          ) : isHintsError ? (
-            <p className="text-red-500 text-sm">
-              Fehler beim Abrufen der Hinweise: {(hintsError as Error)?.message || 'Unbekannter Fehler'}
-            </p>
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Analysierte Aufgaben</h2>
+          {analysisResults?.tasks && analysisResults.tasks.length > 0 ? (
+            <div className="space-y-4">
+              <div className="divide-y divide-gray-200">
+                {analysisResults.tasks.map((task, index) => (
+                  <div key={index} className="py-4">
+                    <h3 className="text-sm font-medium text-gray-900">{task.description}</h3>
+                    <p className="mt-1 text-sm text-gray-600">{task.description}</p>
+                    <div className="mt-2 flex items-center text-sm text-gray-500">
+                      <span>Geschätzte Zeit: {task.estimated_hours} Stunden</span>
+                      {task.duration_hours && (
+                        <span className="ml-4">Dauer: {task.duration_hours} Stunden</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button
+                className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                onClick={() => {
+                  // TODO: Implement dashboard integration
+                  console.log('Tasks to dashboard:', analysisResults.tasks);
+                }}
+              >
+                Einplanen
+              </button>
+            </div>
           ) : (
-            proactiveHints && <ProactiveHintsPanel data={{ hints: analysisResults?.hints || [] }} projectId={projectId} />
+            <p className="text-gray-500">Keine analysierten Aufgaben vorhanden</p>
           )}
         </div>
       </div>
