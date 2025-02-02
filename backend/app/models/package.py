@@ -1,9 +1,10 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, ARRAY
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+from app.core.config import settings
 
 class Package(Base):
-    __tablename__ = "packages"
+    __tablename__ = "test_packages" if settings.DEBUG else "packages"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
