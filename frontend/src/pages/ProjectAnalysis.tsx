@@ -1,8 +1,6 @@
 import { useState } from 'react';
-
 import PDFUploader from '../components/PDFAnalysis/PDFUploader';
 import AnalysisResults from '../components/PDFAnalysis/AnalysisResults';
-
 import { FileList } from '../components/PDFAnalysis/FileList';
 import { PdfAnalysisResponse, UploadedPdfFile } from '../types/api';
 import { useQuery } from '@tanstack/react-query';
