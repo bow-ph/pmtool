@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { apiClient } from '../api/client';
+import { apiClient, endpoints } from '../api/client';
 import { toast } from 'react-hot-toast';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@pmtool.test');
+  const [password, setPassword] = useState('admin');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ export default function LoginPage() {
       formData.append('password', password);
       formData.append('grant_type', 'password');
 
-      const response = await apiClient.post('/api/v1/auth/login', formData, {
+      const response = await apiClient.post(endpoints.login(), formData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         }

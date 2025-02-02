@@ -163,7 +163,7 @@ export interface CalDAVResponse {
 
 export interface UploadedPdfFile {
   filename: string;
-  stored_filename: string;
+  stored_filename?: string;  // Optional since we're using filename for analysis
   upload_time: string;
   file_url: string;
 }

@@ -1,12 +1,29 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer
 from app.core.config import settings
 from app.api.v1.api import api_router
+from app.core.auth import get_current_user, oauth2_scheme
+from app.models.user import User
 import logging
+
+# Configure OAuth2
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+# Development test user
+TEST_USER = User(
+    id=1,
+    email="admin@pmtool.test",
+    is_active=True,
+    is_superuser=True,
+    subscription_type="enterprise",
+    subscription_end_date=None
+)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -14,9 +31,27 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     debug=True,
-    # Enable automatic redirect for trailing slashes
     redirect_slashes=True
 )
+
+# Add CORS middleware for local development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],
+    expose_headers=["Content-Type"]
+)
+
+# Override authentication for development
+if settings.DEBUG:
+    async def get_current_user_override():
+        return TEST_USER
+    app.dependency_overrides[get_current_user] = get_current_user_override
+    
+    # Add debug log for auth override
+    logger.debug("Authentication override enabled for development with test user: %s", TEST_USER.email)
 
 
 # Debug middleware to log all requests

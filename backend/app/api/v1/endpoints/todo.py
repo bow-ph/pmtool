@@ -19,8 +19,8 @@ async def get_caldav_service():
     await service._init_storage()
     return service
 
-@router.get("/list", response_model=dict)
-async def get_todo_list(
+@router.get("/tasks", response_model=dict)
+async def get_tasks(
     status: Optional[str] = Query(None, enum=['pending', 'in_progress', 'completed']),
     priority: Optional[str] = Query(None, enum=['high', 'medium', 'low']),
     project_id: Optional[int] = None,
@@ -172,6 +172,68 @@ async def create_task(
             detail=f"Failed to create task: {str(e)}"
         )
 
+@router.post("/tasks/{task_id}/move-to-dashboard", response_model=dict)
+async def move_task_to_dashboard(
+    task_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    caldav_service: CalDAVService = Depends(get_caldav_service)
+):
+    """Move a task to the dashboard and sync with calendar"""
+    try:
+        task = db.query(Task).join(Task.project).filter(
+            Task.id == task_id,
+            Project.user_id == current_user.id
+        ).first()
+        
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+            
+        # Update task status to indicate it's moved to dashboard
+        task.status = "pending"
+        db.commit()
+        
+        # Sync with calendar
+        try:
+            calendar_path = f"{current_user.id}/calendar"
+            await caldav_service.create_calendar(current_user.id, "PM Tool Calendar")
+            
+            event_uid = await caldav_service.sync_task_with_calendar({
+                "id": task.id,
+                "title": task.title or task.description or "Untitled Task",
+                "description": task.description,
+                "estimated_hours": task.estimated_hours,
+                "duration_hours": task.duration_hours,
+                "hourly_rate": task.hourly_rate,
+                "status": task.status,
+                "priority": task.priority,
+                "confidence_score": task.confidence_score,
+                "confidence_rationale": task.confidence_rationale,
+                "start_date": datetime.now(),
+                "end_date": datetime.now() + timedelta(hours=float(task.duration_hours or task.estimated_hours))
+            }, calendar_path)
+            
+            if not task.caldav_event_uid:
+                task.caldav_event_uid = event_uid
+                db.commit()
+            
+            return {
+                "status": "success",
+                "task": task.to_dict()
+            }
+        except Exception as caldav_error:
+            print(f"CalDAV sync error: {str(caldav_error)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to sync task with calendar: {str(caldav_error)}"
+            )
+    except Exception as e:
+        print(f"Error moving task to dashboard: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to move task to dashboard: {str(e)}"
+        )
+
 @router.put("/tasks/{task_id}", response_model=dict)
 async def update_todo_item(
     task_id: int,
@@ -304,7 +366,11 @@ async def get_sync_status(
         
         try:
             events = await caldav_service.get_tasks(calendar_path)
-            event_map = {e.get("x-pm-tool-id"): e async for e in events}
+            event_map = {
+                e.get("x-pm-tool-id"): e 
+                for e in events 
+                if e.get("x-pm-tool-id")
+            }
             
             for task in tasks:
                 if str(task.id) in event_map:

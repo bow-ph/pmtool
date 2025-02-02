@@ -149,22 +149,29 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({
         <FileList 
           files={uploadedFiles}
           onAnalyze={async (file) => {
-            setAnalyzingFile(file.stored_filename);
+            if (!file.filename) {
+              onError?.('Keine Datei zum Analysieren gefunden');
+              return;
+            }
+            setAnalyzingFile(file.filename);
             try {
-              const formData = new FormData();
-              formData.append('file', file.stored_filename);
               const response = await apiClient.post(
-                endpoints.analyzePdf(projectId),
-                formData,
+                endpoints.analyzePdf(projectId, file.filename),
+                null,
                 {
                   headers: {
-                    'Content-Type': 'multipart/form-data',
+                    'Content-Type': 'application/json',
                   }
                 }
               );
-              onAnalysisComplete(response.data);
+              if (response.data && response.data.tasks && response.data.tasks.length > 0) {
+                onAnalysisComplete(response.data);
+              } else {
+                onError?.('Keine Aufgaben konnten aus dem PDF extrahiert werden.');
+              }
             } catch (error) {
-              onError?.(error instanceof Error ? error.message : 'Analysis failed');
+              console.error('Analysis error:', error);
+              onError?.(error instanceof Error ? error.message : 'Analyse fehlgeschlagen');
             } finally {
               setAnalyzingFile(undefined);
             }

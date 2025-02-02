@@ -36,11 +36,17 @@ export const FileList: React.FC<FileListProps> = ({ files, onAnalyze, analyzingF
               Öffnen
             </a>
             <button
-              onClick={() => onAnalyze(file)}
-              disabled={analyzingFile === file.stored_filename}
+              onClick={() => {
+                if (!file.filename) {
+                  console.error('No filename available');
+                  return;
+                }
+                onAnalyze(file);
+              }}
+              disabled={analyzingFile === file.filename}
               className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {analyzingFile === file.stored_filename ? (
+              {analyzingFile === file.filename ? (
                 <span className="flex items-center">
                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
