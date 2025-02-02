@@ -25,42 +25,34 @@ class LoginRequest(BaseModel):
 
 @router.post("/login", response_model=Token)
 async def login(
+    request: Request,
+    db: Session = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
 ) -> Any:
-    """OAuth2 compatible token login"""
+    """OAuth2 compatible token login, supports both form data and JSON"""
     try:
-        username = form_data.username
-        password = form_data.password
+        username = None
+        password = None
         
-        print(f"Login attempt for user: {username}")
-        
-        user = db.query(User).filter(User.email == username).first()
-        if not user:
-            print(f"User not found: {username}")
+        # Try to get credentials from JSON body first
+        try:
+            body = await request.json()
+            username = body.get("username")
+            password = body.get("password")
+            print(f"Received JSON request with username: {username}")
+        except:
+            # Fallback to form data
+            username = form_data.username
+            password = form_data.password
+            print(f"Using form data with username: {username}")
+            
+        if not username or not password:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect email or password",
-                headers={"WWW-Authenticate": "Bearer"},
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Missing username or password"
             )
             
-        if not verify_password(password, user.hashed_password):
-            print(f"Invalid password for user: {username}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect email or password",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-            
-        if not user.is_active:
-            print(f"Inactive user: {username}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Inactive user",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        
-        print(f"Login attempt for user: {username}")
+        print(f"Processing login attempt for user: {username}")
         
         user = db.query(User).filter(User.email == username).first()
         if not user:

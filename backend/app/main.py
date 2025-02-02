@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1.api import api_router
 from app.core.auth import get_current_user, oauth2_scheme
@@ -31,6 +32,15 @@ app = FastAPI(
     redoc_url="/redoc",
     debug=True,
     redirect_slashes=True
+)
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

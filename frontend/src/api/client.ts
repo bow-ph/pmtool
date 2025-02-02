@@ -10,26 +10,42 @@ const getBaseUrl = () => {
   return 'https://admin.docuplanai.com';
 };
 
+// Ensure we're using the correct API version prefix
+const getApiUrl = (endpoint: string) => {
+  const cleanEndpoint = endpoint.replace(/^\/?(api\/v1\/)?/, '');
+  return `/api/v1/${cleanEndpoint.replace(/^\//, '')}`;
+};
+
 export const apiClient = axios.create({
   baseURL: getBaseUrl(),
-  headers: {
-    'Content-Type': 'application/json'
-  },
   withCredentials: true,
   validateStatus: function (status) {
     return status >= 200 && status < 500;
   }
 });
 
-// Add auth token to requests if it exists
+// Add auth token to requests if it exists and handle token refresh
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
-
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+// Handle 401 responses and token refresh
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      localStorage.removeItem('access_token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Create react-query client
 export const queryClient = new QueryClient({
@@ -60,10 +76,10 @@ export const endpoints = {
   getInvoices: () => 'admin/invoices',
   // User subscription endpoints
   // Auth endpoints
-  login: () => '/api/v1/auth/login',
-  register: () => '/api/v1/auth/register',
-  resetPassword: (email: string) => `/api/v1/auth/reset-password/${email}`,
-  testToken: () => '/api/v1/auth/test-token',
+  login: () => getApiUrl('/auth/login'),
+  register: () => getApiUrl('/auth/register'),
+  resetPassword: (email: string) => getApiUrl(`/auth/reset-password/${email}`),
+  testToken: () => getApiUrl('/auth/test-token'),
   
   // Subscription endpoints
   getMySubscription: () => '/api/v1/subscriptions/me',

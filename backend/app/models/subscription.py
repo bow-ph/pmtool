@@ -1,16 +1,17 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+from app.core.config import settings
 from datetime import datetime
 
 class Subscription(Base):
-    __tablename__ = "subscriptions"
+    __tablename__ = "test_subscriptions" if settings.DEBUG else "subscriptions"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("test_users.id" if settings.DEBUG else "users.id"))
     mollie_id = Column(String, unique=True, index=True)
     customer_id = Column(String)
-    package_id = Column(Integer, ForeignKey("packages.id"))
+    package_id = Column(Integer, ForeignKey("test_packages.id" if settings.DEBUG else "packages.id"))
     package_type = Column(String)  # trial, team, enterprise
     project_limit = Column(Integer, nullable=True)  # Custom limit for enterprise packages
     status = Column(String)  # active, pending, canceled, suspended

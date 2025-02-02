@@ -2,12 +2,13 @@ from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
+from app.core.config import settings
 
 class Task(Base):
-    __tablename__ = "tasks"
+    __tablename__ = "test_tasks" if settings.DEBUG else "tasks"
 
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id"))
+    project_id = Column(Integer, ForeignKey("test_projects.id" if settings.DEBUG else "projects.id"))
     title = Column(String)
     description = Column(String)
     estimated_hours = Column(Float)
