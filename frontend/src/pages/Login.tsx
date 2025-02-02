@@ -23,14 +23,13 @@ export default function LoginPage() {
 
     try {
       console.log('Making API request to:', endpoints.login());
-      const formData = new URLSearchParams();
-      formData.append('username', email);
-      formData.append('password', password);
-      formData.append('grant_type', 'password');
-
-      const response = await apiClient.post(endpoints.login(), formData, {
+      const response = await apiClient.post(endpoints.login(), {
+        username: email,
+        password: password,
+        grant_type: 'password'
+      }, {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+          'Content-Type': 'application/json'
         }
       });
       console.log('Login response:', response.data);

@@ -20,9 +20,6 @@ const getApiUrl = (endpoint: string) => {
 
 export const apiClient = axios.create({
   baseURL: `${getBaseUrl()}/api/v1`,
-  headers: {
-    'Content-Type': 'application/json'
-  },
   withCredentials: true,
   validateStatus: function (status) {
     return status >= 200 && status < 500;
