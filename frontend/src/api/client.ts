@@ -5,34 +5,10 @@ import { QueryClient } from '@tanstack/react-query';
 
 const getBaseUrl = () => {
   if (import.meta.env.DEV) {
-    return 'http://localhost:8000/api/v1';
+    return 'http://localhost:8000';
   }
-  return 'https://admin.docuplanai.com/api/v1';
+  return 'https://admin.docuplanai.com';
 };
-
-// Configure axios defaults for production
-const setupAxiosDefaults = () => {
-  if (!import.meta.env.DEV) {
-    apiClient.defaults.headers['Access-Control-Allow-Origin'] = 'https://docuplanai.com';
-    apiClient.defaults.headers['Access-Control-Allow-Credentials'] = 'true';
-  }
-};</old_str>
-<new_str>const getBaseUrl = () => {
-  if (import.meta.env.DEV) {
-    return 'http://localhost:8000/api/v1';
-  }
-  return 'https://admin.docuplanai.com/api/v1';
-};
-
-// Configure axios defaults for production
-const setupAxiosDefaults = () => {
-  if (!import.meta.env.DEV) {
-    apiClient.defaults.headers['Access-Control-Allow-Origin'] = 'https://docuplanai.com';
-    apiClient.defaults.headers['Access-Control-Allow-Credentials'] = 'true';
-  }
-};
-
-setupAxiosDefaults();
 
 export const apiClient = axios.create({
   baseURL: getBaseUrl(),
@@ -48,7 +24,6 @@ export const apiClient = axios.create({
 // Add auth token to requests if it exists and handle token refresh
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
-
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -60,18 +35,10 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
-      try {
-        // Clear the invalid token
-        localStorage.removeItem('access_token');
-        window.location.href = '/login';
-        return Promise.reject(error);
-      } catch (refreshError) {
-        return Promise.reject(refreshError);
-      }
+      localStorage.removeItem('access_token');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
@@ -89,30 +56,30 @@ export const queryClient = new QueryClient({
 
 // API endpoints
 export const endpoints = {
-  analyzePdf: (projectId: number, filename: string) => `/projects/${projectId}/analyze-pdf/${encodeURIComponent(filename)}`,
-  getAnalyzedTasks: (projectId: number) => `/projects/${projectId}/tasks`,
-  uploadPdf: (projectId: number) => `/projects/${projectId}/upload-pdf`,
-  getUploadedPdfs: (projectId: number) => `/projects/${projectId}/uploaded-pdfs`,
-  getTasks: (projectId?: number) => projectId ? `/projects/${projectId}/tasks` : `/todo/tasks`,
-  getTasksByDate: (startDate: string, endDate: string) => `/todo/tasks?start_date=${startDate}&end_date=${endDate}`,
-  getTask: (taskId: number) => `/todo/tasks/${taskId}`,
-  updateTask: (taskId: number) => `/todo/tasks/${taskId}`,
-  deleteTask: (taskId: number) => `/todo/tasks/${taskId}`,
-  createTask: () => `/todo/tasks`,
-  getDashboardTasks: () => `/todo/tasks`,
-  moveTaskToDashboard: (taskId: number) => `/todo/tasks/${taskId}/move-to-dashboard`,
+  analyzePdf: (projectId: number, filename: string) => `/api/v1/projects/${projectId}/analyze-pdf/${encodeURIComponent(filename)}`,
+  getAnalyzedTasks: (projectId: number) => `/api/v1/projects/${projectId}/tasks`,
+  uploadPdf: (projectId: number) => `/api/v1/projects/${projectId}/upload-pdf`,
+  getUploadedPdfs: (projectId: number) => `/api/v1/projects/${projectId}/uploaded-pdfs`,
+  getTasks: (projectId?: number) => projectId ? `/api/v1/projects/${projectId}/tasks` : `/api/v1/todo/tasks`,
+  getTasksByDate: (startDate: string, endDate: string) => `/api/v1/todo/tasks?start_date=${startDate}&end_date=${endDate}`,
+  getTask: (taskId: number) => `/api/v1/todo/tasks/${taskId}`,
+  updateTask: (taskId: number) => `/api/v1/todo/tasks/${taskId}`,
+  deleteTask: (taskId: number) => `/api/v1/todo/tasks/${taskId}`,
+  createTask: () => `/api/v1/todo/tasks`,
+  getDashboardTasks: () => `/api/v1/todo/tasks`,
+  moveTaskToDashboard: (taskId: number) => `/api/v1/todo/tasks/${taskId}/move-to-dashboard`,
   getPackages: () => 'packages',
   getSubscriptions: () => 'admin/subscriptions',
   getInvoices: () => 'admin/invoices',
   // User subscription endpoints
   // Auth endpoints
-  login: () => '/auth/login',
-  register: () => '/auth/register',
-  resetPassword: (email: string) => `/auth/reset-password/${email}`,
-  testToken: () => '/auth/test-token',
+  login: () => '/api/v1/auth/login',
+  register: () => '/api/v1/auth/register',
+  resetPassword: (email: string) => `/api/v1/auth/reset-password/${email}`,
+  testToken: () => '/api/v1/auth/test-token',
   
   // Subscription endpoints
-  getMySubscription: () => '/subscriptions/me',
-  checkProjectLimit: () => '/subscriptions/me/project-limit',
-  cancelSubscription: () => '/subscriptions/me/cancel',
+  getMySubscription: () => '/api/v1/subscriptions/me',
+  checkProjectLimit: () => '/api/v1/subscriptions/me/project-limit',
+  cancelSubscription: () => '/api/v1/subscriptions/me/cancel',
 };
