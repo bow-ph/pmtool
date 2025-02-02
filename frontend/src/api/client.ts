@@ -14,10 +14,6 @@ export const apiClient = axios.create({
   baseURL: getBaseUrl(),
   headers: {
     'Content-Type': 'application/json'
-  },
-  withCredentials: true,
-  validateStatus: function (status) {
-    return status >= 200 && status < 500;
   }
 });
 
