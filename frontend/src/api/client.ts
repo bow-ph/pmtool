@@ -5,16 +5,15 @@ import { QueryClient } from '@tanstack/react-query';
 
 const getBaseUrl = () => {
   if (import.meta.env.DEV) {
-    return 'http://localhost:8000/api/v1';
+    return 'http://localhost:8000';
   }
-  return window.location.protocol === 'https:' ? 'https://admin.docuplanai.com/api/v1' : 'http://admin.docuplanai.com/api/v1';
+  return 'http://admin.docuplanai.com';
 };
 
 // Ensure we're using the correct API version prefix
 const getApiUrl = (endpoint: string) => {
-  // Remove any existing /api/v1/ prefix to prevent duplication
   const cleanEndpoint = endpoint.replace(/^\/?(api\/v1\/)?/, '');
-  return cleanEndpoint.startsWith('/') ? cleanEndpoint : `/${cleanEndpoint}`;
+  return `/api/v1/${cleanEndpoint.replace(/^\//, '')}`;
 };
 
 export const apiClient = axios.create({
