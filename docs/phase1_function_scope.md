@@ -1,17 +1,20 @@
-# DocuPlanAI Phase 1 Function Scope
+# DocuPlanAI Function Scope
 
-## 1. Authentication System
-### Login
-- JWT token-based authentication
+## Phase 1 (MVP)
+### 1. Authentication System
+#### Login
+- Basic JWT token-based authentication
 - Support for both form and JSON request formats
 - Token storage in localStorage with automatic header management
 - Protected routes using AuthContext
 
-### Registration
-- Email/password registration
+#### Registration
+- Basic email/password registration
 - Form validation with error handling
-- Subscription type selection (trial/team/enterprise)
+- Package selection during registration
 - Automatic login after successful registration
+
+Note: Advanced authentication features (password reset, 2FA) are planned for Phase 3
 
 ## 2. PDF Analysis
 ### Upload
@@ -79,9 +82,25 @@
 - Component-based UI
 - Real-time form validation
 
-## Not Included in Phase 1
-- Calendar integration (CalDAV)
-- Subscription management
-- Admin interface
+## Future Phases
+
+### Phase 2
+- Task planning workflow ("Planung" button)
+- Task editing (title, description, time)
+- Calendar integration
+- Task scheduling via "Einplanen" button
+- Outlook calendar integration
+- Complete planning export to Outlook
+
+### Phase 3
+- Enhanced authentication (login, registration, password reset)
+- Subscription package management
+- Admin interface for customer and subscription management
+- Customer account management
+
+### Not Included in Phase 1
+- Calendar integration (moved to Phase 2)
+- Subscription management (moved to Phase 3)
+- Admin interface (moved to Phase 3)
 - Email notifications
-- Multi-factor authentication
+- Multi-factor authentication (moved to Phase 3)

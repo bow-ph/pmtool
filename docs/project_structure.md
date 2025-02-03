@@ -1,6 +1,8 @@
 # DocuPlanAI Project Structure
 
-## Directory Layout
+## Directory Layout by Phase
+
+### Phase 1 (MVP)
 ```
 /docuplanai/
 ├── frontend/
@@ -11,8 +13,8 @@
 │   │   ├── components/       # Reusable UI components
 │   │   │   ├── ui/          # Base UI components
 │   │   │   ├── PDF/         # PDF handling components
-│   │   │   ├── Task/        # Task management components
-│   │   │   └── Project/     # Project management components
+│   │   │   ├── Task/        # Task list components
+│   │   │   └── Analysis/    # PDF analysis components
 │   │   ├── contexts/        # React contexts
 │   │   │   ├── AuthContext  # Authentication state
 │   │   │   └── ThemeContext # Theme management
@@ -46,14 +48,74 @@
             ├── pdf_analysis_service.py    # PDF processing
             └── openai_service.py          # OpenAI integration
 
+### Phase 2 (Task Planning & Calendar)
+```
+/docuplanai/
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Calendar/    # Calendar integration components
+│   │   │   │   ├── CalendarView.tsx
+│   │   │   │   └── OutlookSync.tsx
+│   │   │   └── Task/       # Enhanced task components
+│   │   │       ├── TaskEditor.tsx
+│   │   │       └── TaskPlanner.tsx
+│   │   └── services/
+│   │       └── outlook.ts   # Outlook calendar integration
+└── backend/
+    └── app/
+        ├── api/v1/
+        │   └── calendar/    # Calendar sync endpoints
+        └── services/
+            └── calendar/    # Calendar integration services
+```
+
+### Phase 3 (Admin & Subscription)
+```
+/docuplanai/
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Admin/      # Admin interface components
+│   │   │   │   ├── CustomerManagement.tsx
+│   │   │   │   └── SubscriptionManagement.tsx
+│   │   │   └── Account/    # Enhanced account components
+│   │   │       ├── Profile.tsx
+│   │   │       └── Subscription.tsx
+│   │   └── pages/
+│   │       └── admin/      # Admin pages
+│   │           ├── Customers.tsx
+│   │           └── Subscriptions.tsx
+└── backend/
+    └── app/
+        ├── api/v1/
+        │   ├── admin/      # Admin endpoints
+        │   └── account/    # Account management
+        └── services/
+            └── billing/    # Subscription services
+```
+
 ## Key Files and Their Purposes
 
-### Frontend
+### Phase 1 (MVP)
+#### Frontend
 - `src/api/client.ts`: Axios client configuration with auth token management
 - `src/contexts/AuthContext.tsx`: JWT token management and auth state
 - `src/components/PDF/PDFUploader.tsx`: PDF file upload handling
 - `src/components/Task/TaskList.tsx`: Task display and management
 - `src/pages/Analysis/ProjectAnalysis.tsx`: PDF analysis workflow
+
+### Phase 2 (Task Planning & Calendar)
+#### Frontend
+- `src/components/Calendar/CalendarView.tsx`: Calendar integration UI
+- `src/components/Task/TaskPlanner.tsx`: Task planning interface
+- `src/services/outlook.ts`: Outlook calendar sync service
+
+### Phase 3 (Admin & Subscription)
+#### Frontend
+- `src/pages/admin/Customers.tsx`: Customer management interface
+- `src/components/Account/Subscription.tsx`: Subscription management
+- `src/components/Admin/SubscriptionManagement.tsx`: Admin subscription tools
 
 ### Backend
 - `app/api/v1/endpoints/pdf.py`: PDF upload and analysis endpoints
