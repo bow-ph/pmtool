@@ -66,7 +66,7 @@ async def upload_pdf(
     if not content.startswith(b'%PDF-'):
         raise HTTPException(status_code=400, detail="Invalid file type. File content is not a valid PDF.")
     
-    upload_dir = "/var/docuplanai/uploads"
+    upload_dir = "/var/www/docuplanai/uploads"
     os.makedirs(upload_dir, exist_ok=True)
     os.chmod(upload_dir, 0o755)  # Ensure directory is readable and executable
     
@@ -94,7 +94,7 @@ async def get_uploaded_pdfs(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> List[Dict]:
-    upload_dir = "/var/docuplanai/uploads"
+    upload_dir = "/var/www/docuplanai/uploads"
     if not os.path.exists(upload_dir):
         return []
     
@@ -131,7 +131,7 @@ async def analyze_pdf(
         raise HTTPException(status_code=404, detail="Project not found")
 
     # Handle file path directly since we're using stored_filename
-    file_path = os.path.join("/var/docuplanai/uploads", stored_filename)
+    file_path = os.path.join("/var/www/docuplanai/uploads", stored_filename)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail=f"PDF file not found: {stored_filename}")
         
