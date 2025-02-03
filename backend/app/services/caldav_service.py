@@ -223,6 +223,7 @@ class CalDAVService:
 
     async def create_calendar(self, user_identifier: str | int, calendar_name: str = "PM Tool"):
         try:
+            await self.initialize()
             calendar_path = f"{user_identifier}/calendar"
             print(f"Creating calendar at path: {calendar_path}")
             
@@ -270,6 +271,7 @@ class CalDAVService:
 
     async def add_task(self, task_data: dict, calendar_path: str):
         try:
+            await self.initialize()
             print(f"Adding task to calendar {calendar_path}: {task_data}")
             
             # Validate required fields
@@ -344,6 +346,7 @@ class CalDAVService:
 
     async def update_task(self, calendar_path: str, event_uid: str, task_data: dict):
         try:
+            await self.initialize()
             print(f"Updating task {task_data.get('id')} in calendar {calendar_path}")
             
             # Validate required fields
@@ -426,6 +429,7 @@ class CalDAVService:
 
     async def delete_task(self, calendar_path: str, event_uid: str):
         try:
+            await self.initialize()
             collection = await self.storage.discover(calendar_path)
             if not collection:
                 raise ValueError(f"Calendar not found: {calendar_path}")
@@ -561,6 +565,7 @@ class CalDAVService:
             if start_date and end_date and start_date >= end_date:
                 raise ValueError("end_date must be after start_date")
             
+            await self.initialize()
             collection = await self.storage.discover(calendar_path)
             if not collection:
                 raise ValueError(f"Calendar not found: {calendar_path}")
