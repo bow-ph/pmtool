@@ -12,7 +12,7 @@ import os
 
 router = APIRouter()
 
-@router.post("/upload", response_model=dict)
+@router.post("/upload-pdfs", response_model=dict)
 async def upload_pdf(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
