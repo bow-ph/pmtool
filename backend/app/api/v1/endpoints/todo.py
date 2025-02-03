@@ -15,9 +15,7 @@ router = APIRouter()
 
 async def get_caldav_service():
     """Dependency to get CalDAV service instance"""
-    service = CalDAVService()
-    await service._init_storage()
-    return service
+    return CalDAVService()
 
 @router.get("/tasks", response_model=dict)
 async def get_tasks(

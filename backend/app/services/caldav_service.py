@@ -20,23 +20,27 @@ except ImportError:
 
 class CalDAVService:
     def __init__(self):
-        try:
-            self.is_testing = os.getenv('TESTING', 'false').lower() == 'true'
-            self.base_path = "/tmp/caldav_storage" if self.is_testing else settings.caldav_storage_path
-            asyncio.run(self._init_storage())
+        self.is_testing = os.getenv('TESTING', 'false').lower() == 'true'
+        self.base_path = "/tmp/caldav_storage" if self.is_testing else settings.caldav_storage_path
+        self.storage = None
+        
+        if not self.is_testing and not settings.CALDAV_USERNAME:
+            raise ValueError("CALDAV_USERNAME must be set")
             
-            if not self.is_testing and not settings.CALDAV_USERNAME:
-                raise ValueError("CALDAV_USERNAME must be set")
-                
-            if settings.CALDAV_AUTH_ENABLED:
-                self._init_auth()
-                
-        except Exception as e:
-            print(f"Critical error in CalDAV service initialization: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to initialize CalDAV service: {str(e)}"
-            )
+        if settings.CALDAV_AUTH_ENABLED:
+            self._init_auth()
+
+    async def initialize(self):
+        """Initialize the CalDAV storage asynchronously"""
+        if self.storage is None:
+            try:
+                self.storage = await self._init_storage()
+            except Exception as e:
+                print(f"Critical error in CalDAV service initialization: {str(e)}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to initialize CalDAV service: {str(e)}"
+                )
             
     async def _init_storage(self):
         try:
@@ -447,8 +451,7 @@ class CalDAVService:
                 return event_uid
             
             # Ensure storage is initialized
-            if not hasattr(self, 'storage'):
-                await self._init_storage()
+            await self.initialize()
             
             # Use sanitized user ID from calendar path or default
             if not calendar_path:
@@ -532,17 +535,7 @@ class CalDAVService:
             try:
                 print(f"Attempting to sync task {task_data['id']} to calendar {calendar_path}")
                 
-                # Create calendar directory structure
-                calendar_dir = os.path.join(self.storage.root, calendar_path)
-                os.makedirs(calendar_dir, mode=0o755, exist_ok=True)
-                
-                # Create initial calendar file if it doesn't exist
-                calendar_file = os.path.join(calendar_dir, "collection.ics")
-                if not os.path.exists(calendar_file):
-                    with open(calendar_file, "w") as f:
-                        f.write("BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//PM Tool//CalDAV Client//EN\nEND:VCALENDAR\n")
-                
-                # Create or get collection
+                # Get or create calendar collection
                 collection = await self.storage.discover(calendar_path)
                 if not collection:
                     print(f"Calendar not found. Creating calendar at {calendar_path}")
