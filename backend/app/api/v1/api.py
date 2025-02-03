@@ -32,4 +32,4 @@ api_router.include_router(health.router, tags=["health"])
 api_router.include_router(pdf.router, prefix="/pdf", tags=["pdf"])
 api_router.include_router(hints.router, prefix="/projects", tags=["hints"])
 api_router.include_router(_projects.router, prefix="/projects", tags=["projects"])
-
+api_router.include_router(_projects.router, prefix="/upload-pdfs", tags=["upload-pdfs"])
