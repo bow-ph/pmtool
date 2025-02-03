@@ -1,4 +1,4 @@
-from backend.app.api.v1.endpoints import _projects
+from app.api.v1.endpoints import _projects
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
     payments,

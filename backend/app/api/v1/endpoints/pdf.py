@@ -66,11 +66,12 @@ async def analyze_pdf(
         print(f"PDF stored successfully at {pdf_url}")
         
         print("Starting PDF analysis...")
-        analysis_result = await pdf_service.analyze_pdf(project_id, file)
+        analysis_result = await pdf_service.analyze_pdf(project_id, content)
         print(f"Analysis complete. Found {len(analysis_result.get('tasks', []))} tasks")
         
         # Create tasks and sync with CalDAV
         caldav_service = CalDAVService()
+        await caldav_service.initialize()
         tasks = []
         
         for task_data in analysis_result.get("tasks", []):
@@ -90,21 +91,24 @@ async def analyze_pdf(
             
             # Sync with CalDAV
             calendar_path = f"{current_user.id}/calendar"
-            caldav_event_uid = caldav_service.sync_task_with_calendar(
-                {
-                    "id": task.id,
-                    "title": task.title,
-                    "description": task.description,
-                    "duration_hours": task.duration_hours,
-                    "hourly_rate": task.hourly_rate,
-                    "status": task.status,
-                    "confidence_score": task.confidence_score,
-                    "confidence_rationale": task.confidence_rationale,
-                    "start_date": datetime.now()
-                },
-                calendar_path
-            )
-            task.caldav_event_uid = caldav_event_uid
+            try:
+                caldav_event_uid = await caldav_service.sync_task_with_calendar(
+                    {
+                        "id": task.id,
+                        "title": task.title,
+                        "description": task.description,
+                        "duration_hours": task.duration_hours,
+                        "hourly_rate": task.hourly_rate,
+                        "status": task.status,
+                        "confidence_score": task.confidence_score,
+                        "confidence_rationale": task.confidence_rationale,
+                        "start_date": datetime.now()
+                    },
+                    calendar_path
+                )
+                task.caldav_event_uid = caldav_event_uid
+            except Exception as e:
+                print(f"Warning: CalDAV sync failed but task was created: {str(e)}")
             tasks.append(task)
         
         db.commit()
