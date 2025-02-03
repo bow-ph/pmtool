@@ -36,7 +36,6 @@ class Settings(BaseSettings):
     # Service Configuration
     debug: bool = False
     allowed_hosts: List[str] = ["admin.docuplanai.com", "localhost"]
-    cors_origins: List[str] = ["https://docuplanai.com", "http://localhost:3000"]
 
     @property
     def database_url(self) -> str:
