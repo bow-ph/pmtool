@@ -158,5 +158,19 @@ async def list_projects(
         ) for project in projects
     ]
 
-
+@router.get("/{project_id}/proactive-hints")
+async def get_proactive_hints(
+    project_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Dict:
+    """Get proactive hints for a project"""
+    # Verify project belongs to user
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    estimation_service = EstimationService(db)
+    hints = await estimation_service.generate_proactive_hints(project_id)
+    return hints
 
