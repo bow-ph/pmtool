@@ -10,7 +10,6 @@ import Dashboard from './pages/Dashboard'
 import ProjectAnalysis from './pages/ProjectAnalysis'
 import PackageSelection from './pages/PackageSelection'
 import PackageAdmin from './pages/admin/PackageAdmin'
-import AdminClients from './pages/admin/AdminClients'
 import AccountSettings from './pages/AccountSettings'
 import ResetPassword from './pages/ResetPassword'
 import SignUp from './pages/SignUp'
@@ -21,30 +20,21 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <MainLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<Dashboard />} />
-                <Route path="analysis" element={<ProjectAnalysis />} />
-                <Route path="packages" element={<PackageSelection />} />
-                <Route path="admin/packages" element={<PackageAdmin />} />
-                <Route path="admin/clients" element={<AdminClients />} />
-                <Route path="account" element={<AccountSettings />} />
-              </Route>
-              <Route path="*" element={<Navigate to="/login" replace />} />
-            </Routes>
-            <Toaster position="top-right" />
-          </AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/" element={<MainLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="analysis" element={<ProjectAnalysis />} />
+              <Route path="packages" element={<PackageSelection />} />
+              <Route path="admin/packages" element={<PackageAdmin />} />
+              <Route path="account" element={<AccountSettings />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+          <Toaster position="top-right" />
+
         </BrowserRouter>
       </ThemeProvider>
     </QueryClientProvider>

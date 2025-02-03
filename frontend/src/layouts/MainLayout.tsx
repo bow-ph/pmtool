@@ -20,8 +20,7 @@ const mainNavItems = [
 ] as const;
 
 const adminNavItems = [
-  { name: 'Pakete verwalten', href: '/admin/packages', icon: Package },
-  { name: 'Kunden verwalten', href: '/admin/clients', icon: Users },
+  { name: 'Pakete verwalten', href: '/admin/packages', icon: Package }
 ] as const;
 
 const MainLayout = () => {
