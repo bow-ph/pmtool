@@ -2,9 +2,10 @@ from sqlalchemy import Boolean, Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
+from app.core.config import settings
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "test_users" if settings.DEBUG else "users"
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)

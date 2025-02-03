@@ -5,8 +5,10 @@ import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { apiClient, endpoints } from '../api/client';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function LoginPage() {
+  const { setToken } = useAuth();
   const [email, setEmail] = useState('admin@pmtool.test');
   const [password, setPassword] = useState('admin');
   const [error, setError] = useState('');
@@ -17,21 +19,22 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+    console.log('Attempting login with:', { email, password });
 
     try {
-      const formData = new URLSearchParams();
-      formData.append('username', email);
-      formData.append('password', password);
-      formData.append('grant_type', 'password');
-
-      const response = await apiClient.post(endpoints.login(), formData, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
+      console.log('Making API request to:', endpoints.login());
+      const response = await apiClient.post(endpoints.login(), {
+        username: email,
+        password: password,
+        grant_type: 'password'
       });
-
-      localStorage.setItem('access_token', response.data.access_token);
-      apiClient.defaults.headers.Authorization = `Bearer ${response.data.access_token}`;
+      
+      if (!response.data.access_token) {
+        throw new Error('No access token received');
+      }
+      
+      console.log('Login successful');
+      setToken(response.data.access_token);
       navigate('/');
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 'Login failed';

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { apiClient } from '../api/client';
 
 interface AuthContextType {
   token: string | null;
@@ -17,14 +18,20 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem('auth_token');
+    const storedToken = localStorage.getItem('access_token');
+    if (storedToken) {
+      apiClient.defaults.headers.Authorization = `Bearer ${storedToken}`;
+    }
+    return storedToken;
   });
 
   useEffect(() => {
     if (token) {
-      localStorage.setItem('auth_token', token);
+      localStorage.setItem('access_token', token);
+      apiClient.defaults.headers.Authorization = `Bearer ${token}`;
     } else {
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('access_token');
+      delete apiClient.defaults.headers.Authorization;
     }
   }, [token]);
 
