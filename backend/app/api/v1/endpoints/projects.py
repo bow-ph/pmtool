@@ -74,10 +74,6 @@ async def upload_pdf(
     filename = f"{timestamp}_{file.filename}"
     file_path = os.path.join(upload_dir, filename)
     
-    content = await file.read()
-    if not content.startswith(b'%PDF-'):
-        raise HTTPException(status_code=400, detail="Invalid file type. File content is not a valid PDF.")
-    
     with open(file_path, "wb") as f:
         f.write(content)
     
