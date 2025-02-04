@@ -17,7 +17,7 @@ const Planning: React.FC = () => {
     }
   });
 
-  const { projectId } = useParams<{ projectId: string }>();
+
 
   const transferMutation = useMutation<void, Error, number[]>({
     mutationFn: async (taskIds) => {
