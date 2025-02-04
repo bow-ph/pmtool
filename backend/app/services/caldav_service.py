@@ -561,6 +561,52 @@ class CalDAVService:
             print(f"Failed to sync task: {str(e)}")
             return event_uid
     
+    async def generate_ics_feed(self, user_id: int) -> str:
+        """Generate an ICS feed for a user's calendar"""
+        calendar_path = f"{user_id}/calendar"
+        await self.initialize()
+        
+        collection = await self.storage.discover(calendar_path)
+        if not collection:
+            await self.create_calendar(user_id)
+            collection = await self.storage.discover(calendar_path)
+            if not collection:
+                raise ValueError(f"Calendar not found: {calendar_path}")
+        
+        tasks = await self.get_tasks(calendar_path)
+        
+        calendar_lines = [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//PM Tool//CalDAV Client//EN",
+            "X-WR-CALNAME:PM Tool Tasks",
+            "X-WR-CALDESC:Tasks from PM Tool",
+            "CALSCALE:GREGORIAN",
+            "METHOD:PUBLISH"
+        ]
+        
+        for task in tasks:
+            event_lines = [
+                "BEGIN:VEVENT",
+                f"UID:{task['uid']}",
+                f"SUMMARY:{task['description']}",
+                f"DTSTART:{task['start_date'].strftime('%Y%m%dT%H%M%SZ')}",
+                f"DTEND:{task['end_date'].strftime('%Y%m%dT%H%M%SZ')}",
+                f"DESCRIPTION:{task.get('description', '')}",
+                f"STATUS:{'NEEDS-ACTION' if task.get('status') == 'pending' else 'IN-PROCESS' if task.get('status') == 'in_progress' else 'COMPLETED'}",
+                f"PRIORITY:{'1' if task.get('priority') == 'high' else '5' if task.get('priority') == 'medium' else '9'}",
+                f"X-PM-TOOL-ESTIMATED-HOURS:{task.get('estimated_hours', 0.0)}",
+                f"X-PM-TOOL-DURATION-HOURS:{task.get('duration_hours', task.get('estimated_hours', 0.0))}",
+                f"X-PM-TOOL-HOURLY-RATE:{task.get('hourly_rate', 0.0)}",
+                f"X-PM-TOOL-CONFIDENCE:{task.get('confidence_score', 0.0)}",
+                f"X-PM-TOOL-RATIONALE:{task.get('confidence_rationale', '')}",
+                "END:VEVENT"
+            ]
+            calendar_lines.extend(event_lines)
+        
+        calendar_lines.append("END:VCALENDAR")
+        return "\n".join(calendar_lines)
+
     async def get_tasks(self, calendar_path: str, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> List[dict]:
         try:
             if start_date and end_date and start_date >= end_date:
