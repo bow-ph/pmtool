@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Task } from '../types/api';
@@ -41,6 +42,7 @@ const Planning: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Task Planning</h1>
@@ -72,3 +74,4 @@ const Planning: React.FC = () => {
 };
 
 export default Planning;
+

@@ -59,20 +59,20 @@ def test_client():
     client.headers = {"Authorization": f"Bearer {access_token}"}
     return client
 
-@pytest_asyncio.fixture
-async def mock_caldav_service():
+@pytest.fixture(autouse=True)
+def mock_caldav_service():
     """Mock CalDAV service for testing"""
     mock_service = AsyncMock(spec=CalDAVService)
     mock_service.is_testing = True
-    mock_service._init_storage = MagicMock()  # Not async in actual implementation
+    mock_service.initialize = AsyncMock()
     mock_service.create_calendar = AsyncMock(return_value="test/calendar")
-    mock_service.storage = MagicMock()  # Storage is not async
+    mock_service.storage = MagicMock()
     mock_service.storage.folder = "/tmp/caldav_storage"
-    mock_service.storage.discover = MagicMock()
+    mock_service.storage.discover = AsyncMock()
     mock_service.storage.discover.return_value = MagicMock()
-    mock_service.storage.discover.return_value.upload = MagicMock()
-    mock_service.storage.discover.return_value.list = MagicMock(return_value=[])
-    mock_service.storage.discover.return_value.get_component = MagicMock(return_value={
+    mock_service.storage.discover.return_value.upload = AsyncMock()
+    mock_service.storage.discover.return_value.list = AsyncMock(return_value=[])
+    mock_service.storage.discover.return_value.get_component = AsyncMock(return_value={
         "uid": "test-event-uid",
         "summary": "Test Task",
         "description": "Test Description",
@@ -90,14 +90,9 @@ async def mock_caldav_service():
 
     mock_service.sync_task_with_calendar = AsyncMock(side_effect=mock_sync)
 
-    async def mock_get_caldav():
+    with patch('app.api.v1.endpoints.todo.CalDAVService', return_value=mock_service), \
+         patch('app.api.v1.endpoints.pdf.CalDAVService', return_value=mock_service):
         yield mock_service
-
-    app.dependency_overrides[get_caldav_service] = mock_get_caldav
-    try:
-        yield mock_service
-    finally:
-        app.dependency_overrides.pop(get_caldav_service, None)
 
 @pytest.fixture
 def mock_openai_service():
@@ -176,7 +171,7 @@ async def test_create_task_with_caldav_sync(test_client, mock_caldav_service, mo
     
     # Upload PDF and analyze
     response = test_client.post(
-        f"/api/v1/projects/{project_id}/analyze-pdf",
+        f"/api/v1/pdf/analyze/{project_id}",
         files=files
     )
     print(f"Response status: {response.status_code}")
@@ -239,7 +234,7 @@ async def test_create_task_with_caldav_sync(test_client, mock_caldav_service, mo
     assert "client_input_risk" in accuracy
     
     # Verify task appears in todo list with CalDAV sync
-    response = test_client.get("/api/v1/todo/list")
+    response = test_client.get("/api/v1/todo/tasks")
     assert response.status_code == 200
     result = response.json()
     assert "items" in result
@@ -352,30 +347,29 @@ async def test_update_task_updates_caldav(test_client, mock_caldav_service, db: 
     assert calendar_path == f"{user.id}/calendar"
     
     # Verify task was updated
-    response = test_client.get("/api/v1/todo/list")
+    response = test_client.get("/api/v1/todo/tasks")
     assert response.status_code == 200
     
     # Verify the update response format
     update_response = response.json()
     assert update_response["status"] == "success"
-    assert "task" in update_response
-    task = update_response["task"]
-    assert task["description"] == "Updated description"
-    assert task["duration_hours"] == 6.0
-    assert task["hourly_rate"] == 90.0
-    assert task["status"] == "in_progress"
-    assert "created_at" in task
-    assert "updated_at" in task
-    assert task["created_at"] is not None
-    assert task["updated_at"] is not None
+    assert "items" in update_response
+    tasks = update_response["items"]
+    updated_task = next(t for t in tasks if t["id"] == task_id)
+    assert updated_task["description"] == "Updated description"
+    assert updated_task["duration_hours"] == 6.0
+    assert updated_task["hourly_rate"] == 90.0
+    assert updated_task["status"] == "in_progress"
+    assert "created_at" in updated_task
+    assert "updated_at" in updated_task
+    assert updated_task["created_at"] is not None
+    assert updated_task["updated_at"] is not None
     
-    # Verify task list contains updated task
-    response = test_client.get("/api/v1/todo/list")
-    assert response.status_code == 200
-    result = response.json()
-    assert "items" in result
-    tasks = result["items"]
-    updated_task = next(t for t in tasks if t["description"] == update_data["description"])
-    assert updated_task["duration_hours"] == update_data["duration_hours"]
-    assert updated_task["hourly_rate"] == update_data["hourly_rate"]
-    assert updated_task["status"] == update_data["status"]
+    # Verify CalDAV sync was called with correct data
+    mock_caldav_service.sync_task_with_calendar.assert_called_once()
+    call_args = mock_caldav_service.sync_task_with_calendar.call_args[0]
+    task_data = call_args[0]
+    assert task_data["description"] == update_data["description"]
+    assert task_data["duration_hours"] == update_data["duration_hours"]
+    assert task_data["hourly_rate"] == update_data["hourly_rate"]
+    assert task_data["status"] == update_data["status"]

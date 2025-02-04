@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { toast } from 'react-hot-toast';
 
@@ -15,6 +16,7 @@ const CalendarSubscription: React.FC<CalendarSubscriptionProps> = ({ projectTitl
       toast.success('Calendar URL copied to clipboard');
     } catch (error) {
       toast.error('Failed to copy URL');
+
     }
   };
 
@@ -45,3 +47,4 @@ const CalendarSubscription: React.FC<CalendarSubscriptionProps> = ({ projectTitl
 };
 
 export default CalendarSubscription;
+

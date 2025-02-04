@@ -6,10 +6,11 @@ from app.main import app
 from app.core.database import Base, get_db
 from app.models.user import User
 from app.models.project import Project
+import os
 from app.core.auth import create_access_token, get_password_hash
 
 # Test database URL
-SQLALCHEMY_TEST_DATABASE_URL = "postgresql://pmtool:pmtool@localhost/test_pmtool"
+SQLALCHEMY_TEST_DATABASE_URL = "postgresql://postgres:postgres@localhost/pmtool_test"
 
 # Create test engine
 test_engine = create_engine(SQLALCHEMY_TEST_DATABASE_URL)

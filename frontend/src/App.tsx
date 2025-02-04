@@ -29,7 +29,9 @@ function App() {
             <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="analysis" element={<ProjectAnalysis />} />
+
               <Route path="planning" element={<Planning />} />
+
               <Route path="packages" element={<PackageSelection />} />
               <Route path="admin/packages" element={<PackageAdmin />} />
               <Route path="account" element={<AccountSettings />} />

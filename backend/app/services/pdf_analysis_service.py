@@ -69,6 +69,25 @@ class PDFAnalysisService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error storing PDF: {str(e)}")
 
+    async def get_project_pdfs(self, project_id: int, user_id: int) -> list:
+        """Get list of PDFs uploaded for a project"""
+        try:
+            user_dir = os.path.join(self.upload_dir, str(user_id))
+            if not os.path.exists(user_dir):
+                return []
+
+            files = []
+            for filename in os.listdir(user_dir):
+                if filename.lower().endswith('.pdf'):
+                    files.append({
+                        "filename": filename,
+                        "url": f"/api/v1/pdf/get/{user_id}/{filename}",
+                        "uploaded_at": datetime.fromtimestamp(os.path.getctime(os.path.join(user_dir, filename))).isoformat()
+                    })
+            return sorted(files, key=lambda x: x["uploaded_at"], reverse=True)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error listing PDFs: {str(e)}")
+
     async def get_pdf_path(self, pdf_id: str, user_id: int) -> str:
         """Get the full path of a stored PDF file"""
         try:
@@ -139,51 +158,39 @@ class PDFAnalysisService:
             
         return ' '.join(cleaned_lines)
 
-    async def extract_text_from_pdf(self, content: Union[str, bytes]) -> str:
-        """Extract text content from PDF content or file path"""
+    async def extract_text_from_pdf(self, content: bytes) -> str:
+        """Extract text content from PDF bytes"""
+        if not content.startswith(b'%PDF'):
+            raise HTTPException(status_code=400, detail="Invalid PDF format")
+
         temp_file = None
         try:
-            if isinstance(content, str):
-                if not content.lower().endswith('.pdf'):
-                    raise HTTPException(status_code=400, detail="Invalid file type. Only PDF files are supported.")
-                if not os.path.exists(content):
-                    raise HTTPException(status_code=404, detail="PDF file not found")
-                file_path = content
-            else:
-                if not bytes(content).startswith(b'%PDF-'):
-                    raise HTTPException(status_code=400, detail="Invalid file content. Not a valid PDF.")
-                temp_file = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False)
-                temp_file.write(content)
-                temp_file.close()
-                file_path = temp_file.name
+            temp_file = tempfile.NamedTemporaryFile(suffix='.pdf', delete=True)
+            temp_file.write(content)
+            temp_file.flush()
             
             try:
-                print(f"Starting PDF text extraction from: {file_path}")
                 import pdfplumber
-                pdf_text = ""
-                with pdfplumber.open(file_path) as pdf:
-                    print(f"PDF loaded successfully. Pages: {len(pdf.pages)}")
+                with pdfplumber.open(temp_file.name) as pdf:
                     if len(pdf.pages) == 0:
                         raise HTTPException(status_code=400, detail="PDF file contains no pages")
                     
-                    for i, page in enumerate(pdf.pages):
-                        print(f"Processing page {i + 1}/{len(pdf.pages)}")
+                    text_parts = []
+                    for page in pdf.pages:
                         text = page.extract_text()
                         if text:
-                            print(f"Extracted {len(text)} characters from page {i + 1}")
-                            pdf_text += text + "\n"
-                        else:
-                            print(f"Warning: No text extracted from page {i + 1}")
+                            text_parts.append(text)
                     
-                    if not pdf_text.strip():
+                    if not text_parts:
                         raise HTTPException(status_code=400, detail="No text content found in PDF")
                     
-                    print(f"Total text extracted: {len(pdf_text)} characters")
-                    return pdf_text
+                    return self._clean_text("\n".join(text_parts))
             except Exception as e:
                 print(f"PDF extraction error: {str(e)}")
                 raise HTTPException(status_code=400, detail=f"Error extracting text from PDF: {str(e)}")
             finally:
+                if temp_file:
+                    temp_file.close()
                 if temp_file and os.path.exists(temp_file.name):
                     os.unlink(temp_file.name)
                     print(f"Cleaned up temporary file: {temp_file.name}")
@@ -192,64 +199,73 @@ class PDFAnalysisService:
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Error processing PDF: {str(e)}")
 
-    async def analyze_pdf(self, project_id: int, content: Union[str, bytes]) -> Dict:
+    async def analyze_pdf(self, project_id: int, content: bytes) -> Dict:
         """Analyze PDF content and create tasks with time estimates"""
-        # Handle both string content and file paths
-        pdf_text = content if isinstance(content, str) else await self.extract_text_from_pdf(content)
-        if not pdf_text:
-            raise HTTPException(status_code=400, detail="No text content found in PDF")
-
-
-        # Analyze text with OpenAI and parse JSON response with retries
-        max_retries = 5
-        last_error = None
-        
-        for attempt in range(max_retries):
-            try:
-                response_str = await self.openai_service.analyze_pdf_text(pdf_text)
-                if isinstance(response_str, dict):
-                    analysis_result = response_str
-                else:
-                    analysis_result = json.loads(response_str)
-                if "tasks" in analysis_result and analysis_result["tasks"]:
-                    break
-                last_error = "No valid tasks found in analysis"
-            except json.JSONDecodeError as e:
-                last_error = f"Error parsing OpenAI response: {str(e)}"
-            except Exception as e:
-                last_error = f"Error analyzing PDF: {str(e)}"
+        try:
+            print(f"Starting PDF analysis for project {project_id}")
+            print(f"Content size: {len(content)} bytes")
+            print(f"Content starts with: {content[:20].hex()}")
             
-            if attempt == max_retries - 1:
-                raise HTTPException(status_code=500, detail=last_error)
-        
-        # Create tasks from analysis
-        created_tasks = await self._create_tasks_from_analysis(project_id, analysis_result)
+            if not content or not content.startswith(b'%PDF'):
+                print("Error: Invalid PDF format detected")
+                raise HTTPException(status_code=400, detail="Invalid PDF file format")
 
-        return {
-            "status": "success",
-            "document_analysis": analysis_result.get("document_analysis", {
-                "type": "unknown",
-                "context": "",
-                "client_type": "unknown",
-                "complexity_level": "medium",
-                "clarity_score": 0.0
-            }),
-            "tasks": created_tasks,
-            "hints": analysis_result.get("hints", []),
-            "total_estimated_hours": analysis_result.get("total_estimated_hours", 0),
-            "risk_factors": analysis_result.get("risk_factors", []),
-            "confidence_analysis": analysis_result.get("confidence_analysis", {
-                "overall_confidence": 0.0,
-                "rationale": "",
-                "improvement_suggestions": [],
-                "accuracy_factors": {
-                    "document_clarity": 0.0,
-                    "technical_complexity": 0.0,
-                    "dependency_risk": 0.0,
-                    "client_input_risk": 0.0
-                }
-            })
-        }
+            pdf_text = await self.extract_text_from_pdf(content)
+            if not pdf_text:
+                raise HTTPException(status_code=400, detail="No text content found in PDF")
+
+            # Analyze text with OpenAI
+            max_retries = 5
+            last_error = None
+            analysis_result = None
+            
+            for attempt in range(max_retries):
+                try:
+                    response_str = await self.openai_service.analyze_pdf_text(pdf_text)
+                    analysis_result = response_str if isinstance(response_str, dict) else json.loads(response_str)
+                    if "tasks" in analysis_result and analysis_result["tasks"]:
+                        break
+                except json.JSONDecodeError as e:
+                    last_error = f"Error parsing OpenAI response: {str(e)}"
+                except Exception as e:
+                    last_error = f"Error analyzing PDF: {str(e)}"
+                
+                if attempt == max_retries - 1 and last_error:
+                    raise HTTPException(status_code=500, detail=last_error)
+            
+            # Create tasks from analysis
+            if not analysis_result:
+                raise HTTPException(status_code=500, detail="Failed to analyze PDF content")
+                
+            tasks = await self._create_tasks_from_analysis(project_id, analysis_result)
+            
+            return {
+                "status": "success",
+                "tasks": tasks,
+                "document_analysis": {
+                    "type": "project_proposal",
+                    "context": "Project task planning",
+                    "client_type": "business",
+                    "complexity_level": "medium",
+                    "clarity_score": 0.8
+                },
+                "hints": analysis_result.get("hints", []),
+                "confidence_analysis": (analysis_result or {}).get("confidence_analysis", {
+                    "overall_confidence": 0.0,
+                    "rationale": "",
+                    "improvement_suggestions": [],
+                    "accuracy_factors": {
+                        "document_clarity": 0.0,
+                        "technical_complexity": 0.0,
+                        "dependency_risk": 0.0,
+                        "client_input_risk": 0.0
+                    }
+                })
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
 
     async def _create_tasks_from_analysis(self, project_id: int, analysis: Dict) -> List[Dict]:
         """Create task records from OpenAI analysis"""

@@ -155,17 +155,28 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({
             }
             setAnalyzingFile(file.filename);
             try {
-              const response = await apiClient.post(
-                endpoints.analyzePdf(projectId, file.filename),
-                null,
+              // Create a new File object from the uploaded file data
+              const fileResponse = await fetch(file.file_url);
+              if (!fileResponse.ok) {
+                throw new Error(`Failed to fetch file: ${fileResponse.statusText}`);
+              }
+              const blob = await fileResponse.blob();
+              const uploadFile = new File([blob], file.filename, { type: 'application/pdf' });
+              
+              const formData = new FormData();
+              formData.append('file', uploadFile);
+              
+              const analysisResponse = await apiClient.post(
+                endpoints.analyzePdf(projectId),
+                formData,
                 {
                   headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'multipart/form-data',
                   }
                 }
               );
-              if (response.data && response.data.tasks && response.data.tasks.length > 0) {
-                onAnalysisComplete(response.data);
+              if (analysisResponse.data && analysisResponse.data.tasks && analysisResponse.data.tasks.length > 0) {
+                onAnalysisComplete(analysisResponse.data);
               } else {
                 onError?.('Keine Aufgaben konnten aus dem PDF extrahiert werden.');
               }
