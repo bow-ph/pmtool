@@ -9,6 +9,7 @@ class Task(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("test_projects.id" if settings.DEBUG else "projects.id"))
+    user_id = Column(Integer, ForeignKey("test_users.id" if settings.DEBUG else "users.id"))
     title = Column(String)
     description = Column(String)
     estimated_hours = Column(Float)
@@ -27,6 +28,7 @@ class Task(Base):
 
     # Relationships
     project = relationship("Project", back_populates="tasks")
+    user = relationship("User", back_populates="tasks")
 
     def to_dict(self):
         task_dict = {

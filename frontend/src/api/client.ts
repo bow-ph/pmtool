@@ -4,10 +4,16 @@ import { QueryClient } from '@tanstack/react-query';
 // Create axios instance with default config
 
 const getBaseUrl = () => {
-  if (import.meta.env.DEV) {
+  try {
+    const url = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    if (!/^https?:\/\//.test(url)) {
+      throw new Error('Invalid URL schema. Base URL must start with "http://" or "https://"');
+    }
+    return url;
+  } catch (error) {
+    console.warn('Error getting base URL:', error);
     return 'http://localhost:8000';
   }
-  return 'https://admin.docuplanai.com';
 };
 
 // Ensure we're using the correct API version prefix
@@ -59,10 +65,10 @@ export const queryClient = new QueryClient({
 
 // API endpoints
 export const endpoints = {
-  analyzePdf: (projectId: number, filename: string) => `/api/v1/projects/${projectId}/analyze-pdf/${encodeURIComponent(filename)}`,
-  getAnalyzedTasks: (projectId: number) => `/api/v1/projects/${projectId}/tasks`,
-  uploadPdf: (projectId: number) => `/api/v1/projects/${projectId}/upload-pdf`,
-  getUploadedPdfs: (projectId: number) => `/api/v1/projects/${projectId}/uploaded-pdfs`,
+  analyzePdf: (projectId: number) => `/api/v1/pdf/analyze/${projectId}`,
+  getAnalyzedTasks: (projectId: number) => `/api/v1/pdf/tasks/${projectId}`,
+  uploadPdf: (projectId: number) => `/api/v1/pdf/upload/${projectId}`,
+  getUploadedPdfs: (projectId: number) => `/api/v1/pdf/files/${projectId}`,
   getTasks: (projectId?: number) => projectId ? `/api/v1/projects/${projectId}/tasks` : `/api/v1/todo/tasks`,
   getTasksByDate: (startDate: string, endDate: string) => `/api/v1/todo/tasks?start_date=${startDate}&end_date=${endDate}`,
   getTask: (taskId: number) => `/api/v1/todo/tasks/${taskId}`,

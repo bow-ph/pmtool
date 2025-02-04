@@ -12,15 +12,16 @@ import os
 
 router = APIRouter()
 
-@router.post("/upload-pdfs", response_model=dict)
+@router.post("/upload/{project_id}", response_model=dict)
 async def upload_pdf(
+    project_id: int,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     pdf_service = PDFAnalysisService(db)
     pdf_url = await pdf_service.store_pdf(file, current_user.id)
-    return {"pdf_url": pdf_url}
+    return {"status": "success", "pdf_url": pdf_url}
 
 @router.post("/analyze/{project_id}", response_model=dict)
 async def analyze_pdf(
@@ -87,28 +88,27 @@ async def analyze_pdf(
                 estimated_hours=float(task_data["duration_hours"])
             )
             db.add(task)
-            db.flush()
+            db.commit()  # Commit to ensure task has an ID
             
             # Sync with CalDAV
             calendar_path = f"{current_user.id}/calendar"
-            try:
-                caldav_event_uid = await caldav_service.sync_task_with_calendar(
-                    {
-                        "id": task.id,
-                        "title": task.title,
-                        "description": task.description,
-                        "duration_hours": task.duration_hours,
-                        "hourly_rate": task.hourly_rate,
-                        "status": task.status,
-                        "confidence_score": task.confidence_score,
-                        "confidence_rationale": task.confidence_rationale,
-                        "start_date": datetime.now()
-                    },
-                    calendar_path
-                )
-                task.caldav_event_uid = caldav_event_uid
-            except Exception as e:
-                print(f"Warning: CalDAV sync failed but task was created: {str(e)}")
+            await caldav_service.create_calendar(current_user.id, "PM Tool Calendar")
+            caldav_event_uid = await caldav_service.sync_task_with_calendar(
+                {
+                    "id": task.id,
+                    "title": task.title,
+                    "description": task.description,
+                    "duration_hours": task.duration_hours,
+                    "hourly_rate": task.hourly_rate,
+                    "status": task.status,
+                    "confidence_score": task.confidence_score,
+                    "confidence_rationale": task.confidence_rationale,
+                    "start_date": datetime.now()
+                },
+                calendar_path
+            )
+            task.caldav_event_uid = caldav_event_uid
+            db.add(task)  # Re-add task with caldav_event_uid
             tasks.append(task)
         
         db.commit()
@@ -126,8 +126,20 @@ async def analyze_pdf(
         return {
             "status": "success",
             "pdf_url": pdf_url,
+            "document_analysis": analysis_result.get("document_analysis", {}),
             "tasks": analysis_result["tasks"],
-            "hints": analysis_result.get("hints", [])
+            "hints": analysis_result.get("hints", []),
+            "confidence_analysis": analysis_result.get("confidence_analysis", {
+                "overall_confidence": 0.0,
+                "rationale": "",
+                "improvement_suggestions": [],
+                "accuracy_factors": {
+                    "document_clarity": 0.0,
+                    "technical_complexity": 0.0,
+                    "dependency_risk": 0.0,
+                    "client_input_risk": 0.0
+                }
+            })
         }
     except HTTPException:
         raise
@@ -137,6 +149,16 @@ async def analyze_pdf(
             status_code=500,
             detail=f"Failed to analyze PDF: {str(e)}"
         )
+
+@router.get("/files/{project_id}", response_model=list)
+async def get_uploaded_pdfs(
+    project_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    pdf_service = PDFAnalysisService(db)
+    files = await pdf_service.get_project_pdfs(project_id, current_user.id)
+    return files
 
 @router.get("/get/{user_id}/{filename}")
 async def get_pdf(

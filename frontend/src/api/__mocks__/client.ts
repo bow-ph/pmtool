@@ -4,7 +4,7 @@ import { QueryClient } from '@tanstack/react-query';
 // Base URL konfigurieren
 const getBaseUrl = (): string => {
   try {
-    const url = import.meta.env.VITE_API_URL || 'https://admin.docuplanai.com';
+    const url = process.env.VITE_API_URL || 'https://admin.docuplanai.com';
     if (!/^https?:\/\//.test(url)) {
       throw new Error('Ungültiges URL-Schema. Die Base URL muss mit "http://" oder "https://" beginnen.');
     }

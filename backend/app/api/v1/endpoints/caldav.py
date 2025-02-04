@@ -1,11 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from pydantic import BaseModel, Field
 import re
 import uuid
+import icalendar
+import pytz
+
+from app.models.task import Task
 
 from app.core.database import get_db
 from app.models.user import User
@@ -170,3 +174,46 @@ def get_tasks(
             status_code=500,
             detail=f"Failed to get tasks: {str(e)}"
         )
+
+@router.get("/{user_id}.ics")
+async def get_calendar_feed(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get ICS feed for user's tasks"""
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to access this calendar")
+        
+    try:
+        cal = icalendar.Calendar()
+        cal.add('prodid', '-//DocuPlanAI//Calendar//')
+        cal.add('version', '2.0')
+        
+        tasks = db.query(Task).filter(Task.user_id == user_id).all()
+        
+        for task in tasks:
+            event = icalendar.Event()
+            event.add('summary', task.title)
+            event.add('description', task.description)
+            
+            start_date = task.created_at or datetime.now(pytz.UTC)
+            event.add('dtstart', start_date)
+            
+            end_date = start_date + timedelta(hours=task.duration_hours or 1)
+            event.add('dtend', end_date)
+            
+            event.add('status', task.status.upper())
+            event.add('uid', task.caldav_event_uid or str(uuid.uuid4()))
+            
+            cal.add_component(event)
+        
+        return Response(
+            content=cal.to_ical(),
+            media_type="text/calendar",
+            headers={
+                "Content-Disposition": f'attachment; filename="calendar_{user_id}.ics"'
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

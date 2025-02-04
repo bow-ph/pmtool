@@ -23,6 +23,7 @@ class CalDAVService:
         self.is_testing = os.getenv('TESTING', 'false').lower() == 'true'
         self.base_path = "/tmp/caldav_storage" if self.is_testing else settings.caldav_storage_path
         self.storage = None
+        self.calendar_root = os.path.join(self.base_path, "collection-root")
         
         if not self.is_testing and not settings.CALDAV_USERNAME:
             raise ValueError("CALDAV_USERNAME must be set")
