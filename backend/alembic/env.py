@@ -33,14 +33,9 @@ fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
 
-def get_url():
-    user = os.getenv("POSTGRES_USER", "pmtool")
-    password = os.getenv("POSTGRES_PASSWORD", "pmtool")
-    host = os.getenv("POSTGRES_HOST", "localhost")
-    db = os.getenv("POSTGRES_DB", "bow_db")
-    return f"postgresql://{user}:{password}@{host}/{db}"
+from app.core.config import settings
 
-config.set_main_option("sqlalchemy.url", get_url())
+config.set_main_option("sqlalchemy.url", settings.database_url)
 
 def run_migrations_offline() -> None:
     url = config.get_main_option("sqlalchemy.url")

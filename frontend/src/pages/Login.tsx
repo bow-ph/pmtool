@@ -10,7 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 export default function LoginPage() {
   const { setToken } = useAuth();
   const [email, setEmail] = useState('admin@pmtool.test');
-  const [password, setPassword] = useState('admin');
+  const [password, setPassword] = useState('pmtool');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -23,19 +23,29 @@ export default function LoginPage() {
 
     try {
       console.log('Making API request to:', endpoints.login());
-      const response = await apiClient.post(endpoints.login(), {
-        username: email,
-        password: password,
-        grant_type: 'password'
+      const formData = new URLSearchParams();
+      formData.append('username', email);
+      formData.append('password', password);
+      formData.append('grant_type', 'password');
+      formData.append('scope', '');
+      
+      console.log('Making login request with OAuth2 password flow');
+      const response = await apiClient.post(endpoints.login(), formData.toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json'
+        }
       });
+      
+      console.log('Login response:', response.data);
       
       if (!response.data.access_token) {
         throw new Error('No access token received');
       }
       
-      console.log('Login successful');
+      console.log('Login successful, token:', response.data.access_token.slice(0, 10) + '...');
       setToken(response.data.access_token);
-      navigate('/');
+      navigate('/dashboard', { replace: true });
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 'Login failed';
       setError(errorMessage);

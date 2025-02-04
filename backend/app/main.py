@@ -33,6 +33,26 @@ app = FastAPI(
     redirect_slashes=True
 )
 
+# Add CORS middleware with specific origins
+from fastapi.middleware.cors import CORSMiddleware
+
+origins = [
+    "http://localhost:5173",  # Vite dev server
+    "http://localhost:3000",  # Alternative dev port
+    "http://172.16.5.2:5173",  # Docker dev server
+    "https://docuplanai.com",
+    "https://admin.docuplanai.com"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],
+    expose_headers=["Content-Length", "Content-Range"]
+)
+
 
 
 # Override authentication for development

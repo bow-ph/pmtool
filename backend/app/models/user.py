@@ -34,3 +34,4 @@ class User(Base):
     invoices = relationship("Invoice", back_populates="user")
     projects = relationship("Project", back_populates="user")
     subscriptions = relationship("Subscription", back_populates="user")
+    tasks = relationship("Task", back_populates="user")

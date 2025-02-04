@@ -15,12 +15,15 @@ class OpenAIService:
         if not self.api_key:
             raise ValueError("OpenAI API key not found in environment variables")
             
+        print("Initializing OpenAI client...")
         self.client = OpenAI(
             api_key=self.api_key,
-            timeout=60.0,
-            max_retries=2,
+            timeout=30.0,
+            max_retries=3,
             default_headers={"User-Agent": "DocuPlanAI/1.0"}
         )
+        print(f"OpenAI client initialized with API key: {self.api_key[:8]}...")
+        print("OpenAI client initialized successfully")
         self.test_mode = test_mode
         
     async def analyze_pdf_text(self, text: str) -> Dict:
