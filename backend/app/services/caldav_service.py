@@ -257,10 +257,11 @@ class CalDAVService:
             print(f"Created properties file: {props_file}")
             
             # Create or get collection
-            collection = await self.storage.discover(calendar_path)
+            storage = await self.initialize()
+            collection = await storage.discover(calendar_path)
             if not collection:
                 print(f"Creating new collection at {calendar_path}")
-                collection = await self.storage.create_collection(calendar_path, props)
+                collection = await storage.create_collection(calendar_path, props)
                 if not collection:
                     raise ValueError("Collection creation returned None")
                 print(f"Successfully created calendar collection at {calendar_path}")
