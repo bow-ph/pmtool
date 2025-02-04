@@ -329,8 +329,7 @@ class PDFAnalysisService:
             # Then try to sync with CalDAV
             try:
                 print(f"Starting CalDAV sync for task {task.id} in project {project_id}")
-                caldav_service = CalDAVService()
-                await caldav_service._init_storage()  # Initialize storage
+                caldav_service = CalDAVService()  # Service auto-initializes in __init__
                 
                 # Get user email for calendar path
                 user = self.db.query(User).filter(User.id == project.user_id).first()
@@ -358,7 +357,7 @@ class PDFAnalysisService:
                 
                 # Try to sync with CalDAV but don't let failures affect task creation
                 try:
-                    event_uid = caldav_service.sync_task_with_calendar(caldav_task_data, calendar_path)
+                    event_uid = await caldav_service.sync_task_with_calendar(caldav_task_data, calendar_path)
                     if event_uid:
                         task.caldav_event_uid = event_uid
                         print(f"Successfully synced task {task.id} with CalDAV event {event_uid}")

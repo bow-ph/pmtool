@@ -54,7 +54,7 @@ def test_pdf_analysis_endpoint(client, db, test_user, auth_headers, test_uploads
     with open(test_pdf_file, "rb") as f:
         files = {"file": ("test.pdf", f, "application/pdf")}
         response = client.post(
-            "/api/v1/pdf/upload",
+            "/api/v1/pdf/upload-pdfs",
             files=files,
             headers=auth_headers
         )
@@ -65,7 +65,7 @@ def test_pdf_analysis_endpoint(client, db, test_user, auth_headers, test_uploads
     with open(test_pdf_file, "rb") as f:
         files = {"file": ("test.pdf", f, "application/pdf")}
         response = client.post(
-            f"/api/v1/projects/{project.id}/analyze-pdf",
+            f"/api/v1/pdf/analyze/{project.id}",
             files=files,
             headers=auth_headers
         )
