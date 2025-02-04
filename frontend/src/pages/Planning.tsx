@@ -17,6 +17,8 @@ const Planning: React.FC = () => {
     }
   });
 
+  const { projectId } = useParams<{ projectId: string }>();
+
   const transferMutation = useMutation<void, Error, number[]>({
     mutationFn: async (taskIds) => {
       await apiClient.post('/tasks/transfer', { taskIds });
@@ -39,6 +41,7 @@ const Planning: React.FC = () => {
     }
     transferMutation.mutate(taskIds);
   };
+
 
   return (
     <div className="container mx-auto px-4 py-8">
