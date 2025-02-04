@@ -2,9 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from './api/client'
 import { ThemeProvider } from './contexts/ThemeContext'
-// These imports will be used in a future PR for auth protection
-// import { AuthProvider } from './contexts/AuthContext'
-// import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { AuthProvider } from './contexts/AuthContext'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
 import MainLayout from './layouts/MainLayout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -21,12 +20,13 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/signup" element={<SignUp />} />
-            <Route path="/" element={<MainLayout />}>
+            <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="analysis" element={<ProjectAnalysis />} />
               <Route path="planning" element={<Planning />} />
@@ -39,6 +39,7 @@ function App() {
           <Toaster position="top-right" />
 
         </BrowserRouter>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   )
