@@ -15,8 +15,8 @@ const Planning: React.FC = () => {
     }
   });
 
-  const transferMutation = useMutation({
-    mutationFn: async (taskIds: number[]) => {
+  const transferMutation = useMutation<void, Error, number[]>({
+    mutationFn: async (taskIds) => {
       await apiClient.post('/tasks/transfer', { taskIds });
     },
     onSuccess: () => {
@@ -45,7 +45,7 @@ const Planning: React.FC = () => {
           <h1 className="text-2xl font-bold">Task Planning</h1>
           <button
             onClick={handleTransferTasks}
-            disabled={tasks.length === 0 || transferMutation.isLoading}
+            disabled={tasks.length === 0 || transferMutation.status === 'loading'}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span>Send to Dashboard</span>
@@ -55,8 +55,8 @@ const Planning: React.FC = () => {
 
         <TodoList
           tasks={tasks}
-          onTaskUpdate={async (taskId, updates) => {
-            await apiClient.patch(`/tasks/${taskId}`, updates);
+          onStatusChange={async (taskId: number, status: 'pending' | 'in_progress' | 'completed') => {
+            await apiClient.patch(`/tasks/${taskId}`, { status });
             queryClient.invalidateQueries({ queryKey: ['planning-tasks'] });
           }}
         />
