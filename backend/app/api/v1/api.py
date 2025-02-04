@@ -20,7 +20,7 @@ api_router = APIRouter(prefix="/api/v1")
 
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
-api_router.include_router(caldav.router, prefix="/caldav", tags=["caldav"])
+api_router.include_router(caldav.router, prefix="/calendar", tags=["calendar"])
 api_router.include_router(estimations.router, prefix="/estimations", tags=["estimations"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(invoices.router, prefix="/invoices", tags=["invoices"])

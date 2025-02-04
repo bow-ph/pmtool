@@ -344,6 +344,65 @@ async def update_todo_item(
             detail=f"An unexpected error occurred: {str(e)}"
         )
 
+@router.post("/tasks/transfer", response_model=dict)
+async def transfer_tasks(
+    task_ids: List[int],
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    caldav_service: CalDAVService = Depends(get_caldav_service)
+):
+    """Transfer multiple tasks to the dashboard"""
+    try:
+        tasks = db.query(Task).join(Task.project).filter(
+            Task.id.in_(task_ids),
+            Project.user_id == current_user.id
+        ).all()
+        
+        if not tasks:
+            raise HTTPException(status_code=404, detail="No tasks found")
+        
+        calendar_path = f"{current_user.id}/calendar"
+        await caldav_service.create_calendar(current_user.id, "PM Tool Calendar")
+        
+        for task in tasks:
+            task.status = 'pending'
+            task.in_dashboard = True
+            
+            # Sync with calendar
+            event_uid = await caldav_service.sync_task_with_calendar({
+                "id": task.id,
+                "title": task.title or task.description or "Untitled Task",
+                "description": task.description,
+                "estimated_hours": task.estimated_hours,
+                "duration_hours": task.duration_hours,
+                "hourly_rate": task.hourly_rate,
+                "status": task.status,
+                "priority": task.priority,
+                "confidence_score": task.confidence_score,
+                "confidence_rationale": task.confidence_rationale,
+                "start_date": datetime.now(),
+                "end_date": datetime.now() + timedelta(hours=float(task.duration_hours or task.estimated_hours))
+            }, calendar_path)
+            
+            if not task.caldav_event_uid:
+                task.caldav_event_uid = event_uid
+        
+        db.commit()
+        return {
+            "status": "success",
+            "message": "Tasks transferred successfully",
+            "count": len(tasks),
+            "tasks": [task.to_dict() for task in tasks]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to transfer tasks: {str(e)}"
+        )
+
 @router.get("/sync-status", response_model=dict)
 async def get_sync_status(
     current_user: User = Depends(get_current_user),
