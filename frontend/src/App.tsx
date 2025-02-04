@@ -13,6 +13,7 @@ import PackageAdmin from './pages/admin/PackageAdmin'
 import AccountSettings from './pages/AccountSettings'
 import ResetPassword from './pages/ResetPassword'
 import SignUp from './pages/SignUp'
+import Planning from './pages/Planning'
 import { Toaster } from 'react-hot-toast'
 
 function App() {
@@ -24,9 +25,10 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/signup" element={<SignUp />} />
-            <Route path="/" element={<MainLayout />}>
+            <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="analysis" element={<ProjectAnalysis />} />
+              <Route path="planning/:projectId" element={<Planning />} />
               <Route path="packages" element={<PackageSelection />} />
               <Route path="admin/packages" element={<PackageAdmin />} />
               <Route path="account" element={<AccountSettings />} />
