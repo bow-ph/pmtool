@@ -4,6 +4,7 @@ import { Task } from '../types/api';
 import TodoList from '../components/TodoList/TodoList';
 import { apiClient } from '../api/client';
 import { toast } from 'react-hot-toast';
+import CalendarSubscription from '../components/Calendar/CalendarSubscription';
 
 const Planning: React.FC = () => {
   const queryClient = useQueryClient();
@@ -61,29 +62,10 @@ const Planning: React.FC = () => {
           }}
         />
 
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h2 className="text-lg font-semibold mb-2">Calendar Subscription</h2>
-          <p className="text-sm text-gray-600 mb-4">
-            Subscribe to your tasks in your preferred calendar application:
-          </p>
-          <div className="flex items-center space-x-2">
-            <input
-              type="text"
-              readOnly
-              value={`${window.location.origin}/api/v1/calendar/${localStorage.getItem('userId')}.ics`}
-              className="flex-1 p-2 border rounded-md bg-white"
-            />
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(`${window.location.origin}/api/v1/calendar/${localStorage.getItem('userId')}.ics`);
-                toast.success('Calendar URL copied to clipboard');
-              }}
-              className="bg-gray-200 hover:bg-gray-300 p-2 rounded-md"
-            >
-              📋
-            </button>
-          </div>
-        </div>
+        <CalendarSubscription
+          userId={localStorage.getItem('userId') || ''}
+          projectTitle="PM Tool"
+        />
       </div>
     </div>
   );
