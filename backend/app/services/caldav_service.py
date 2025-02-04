@@ -35,13 +35,17 @@ class CalDAVService:
         """Initialize the CalDAV storage asynchronously"""
         if self.storage is None:
             try:
-                self.storage = await self._init_storage()
+                storage = await self._init_storage()
+                if not storage:
+                    raise ValueError("Storage initialization returned None")
+                self.storage = storage
             except Exception as e:
                 print(f"Critical error in CalDAV service initialization: {str(e)}")
                 raise HTTPException(
                     status_code=500,
                     detail=f"Failed to initialize CalDAV service: {str(e)}"
                 )
+        return self.storage
             
     async def _init_storage(self):
         try:
@@ -168,9 +172,7 @@ class CalDAVService:
                             event[key.lower()] = value
                     return event
             
-            self.storage = SimpleStorage(self.calendar_root)
-            print(f"Initialized storage at: {collection_root}")
-            
+            # Initialize default calendar path
             calendar_path = f"{settings.CALDAV_USERNAME or 'pmtool'}/calendar"
             calendar_dir = os.path.join(collection_root, calendar_path)
             os.makedirs(calendar_dir, mode=0o755, exist_ok=True)
@@ -186,7 +188,9 @@ class CalDAVService:
                 with open(props_file, "w") as f:
                     json.dump(props, f, indent=2)
             
-            return self.storage
+            storage = SimpleStorage(self.calendar_root)
+            print(f"Initialized storage at: {collection_root}")
+            return storage
         except Exception as e:
             error_msg = f"Failed to initialize CalDAV storage: {str(e)}"
             print(f"Error initializing CalDAV storage: {error_msg}")
@@ -254,10 +258,11 @@ class CalDAVService:
             print(f"Created properties file: {props_file}")
             
             # Create or get collection
-            collection = await self.storage.discover(calendar_path)
+            storage = await self.initialize()
+            collection = await storage.discover(calendar_path)
             if not collection:
                 print(f"Creating new collection at {calendar_path}")
-                collection = await self.storage.create_collection(calendar_path, props)
+                collection = await storage.create_collection(calendar_path, props)
                 if not collection:
                     raise ValueError("Collection creation returned None")
                 print(f"Successfully created calendar collection at {calendar_path}")
@@ -298,11 +303,12 @@ class CalDAVService:
                 raise ValueError("estimated_hours must be positive")
             
             # Get or create calendar collection
-            collection = await self.storage.discover(calendar_path)
+            storage = await self.initialize()
+            collection = await storage.discover(calendar_path)
             if not collection:
                 print(f"Creating calendar at {calendar_path}")
                 await self.create_calendar(int(calendar_path.split('/')[0]))
-                collection = await self.storage.discover(calendar_path)
+                collection = await storage.discover(calendar_path)
                 if not collection:
                     raise ValueError(f"Failed to create calendar: {calendar_path}")
             
@@ -373,11 +379,12 @@ class CalDAVService:
                 raise ValueError("estimated_hours must be positive")
             
             # Get calendar collection
-            collection = await self.storage.discover(calendar_path)
+            storage = await self.initialize()
+            collection = await storage.discover(calendar_path)
             if not collection:
                 print(f"Creating calendar at {calendar_path}")
                 await self.create_calendar(int(calendar_path.split('/')[0]))
-                collection = await self.storage.discover(calendar_path)
+                collection = await storage.discover(calendar_path)
                 if not collection:
                     raise ValueError(f"Failed to create calendar: {calendar_path}")
             
@@ -430,8 +437,8 @@ class CalDAVService:
 
     async def delete_task(self, calendar_path: str, event_uid: str):
         try:
-            await self.initialize()
-            collection = await self.storage.discover(calendar_path)
+            storage = await self.initialize()
+            collection = await storage.discover(calendar_path)
             if not collection:
                 raise ValueError(f"Calendar not found: {calendar_path}")
                 
@@ -481,11 +488,12 @@ class CalDAVService:
             print(f"Task sync - Start date: {start_date}, Duration: {duration_hours}h")
             
             try:
-                collection = await self.storage.discover(calendar_path)
+                storage = await self.initialize()
+                collection = await storage.discover(calendar_path)
                 if not collection:
                     print(f"Calendar not found at {calendar_path}, creating...")
                     await self.create_calendar(settings.CALDAV_USERNAME)
-                    collection = await self.storage.discover(calendar_path)
+                    collection = await storage.discover(calendar_path)
             except Exception as e:
                 print(f"Error accessing calendar: {str(e)}")
                 return event_uid
@@ -541,11 +549,12 @@ class CalDAVService:
                 print(f"Attempting to sync task {task_data['id']} to calendar {calendar_path}")
                 
                 # Get or create calendar collection
-                collection = await self.storage.discover(calendar_path)
+                storage = await self.initialize()
+                collection = await storage.discover(calendar_path)
                 if not collection:
                     print(f"Calendar not found. Creating calendar at {calendar_path}")
                     await self.create_calendar(calendar_path.split('/')[0], "PM Tool Calendar")
-                    collection = await self.storage.discover(calendar_path)
+                    collection = await storage.discover(calendar_path)
                     if not collection:
                         raise ValueError(f"Failed to create calendar at {calendar_path}")
                 
@@ -612,8 +621,8 @@ class CalDAVService:
             if start_date and end_date and start_date >= end_date:
                 raise ValueError("end_date must be after start_date")
             
-            await self.initialize()
-            collection = await self.storage.discover(calendar_path)
+            storage = await self.initialize()
+            collection = await storage.discover(calendar_path)
             if not collection:
                 raise ValueError(f"Calendar not found: {calendar_path}")
             

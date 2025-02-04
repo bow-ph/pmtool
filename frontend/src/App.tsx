@@ -20,7 +20,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/reset-password" element={<ResetPassword />} />
@@ -28,7 +29,9 @@ function App() {
             <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="analysis" element={<ProjectAnalysis />} />
-              <Route path="planning/:projectId" element={<Planning />} />
+
+              <Route path="planning" element={<Planning />} />
+
               <Route path="packages" element={<PackageSelection />} />
               <Route path="admin/packages" element={<PackageAdmin />} />
               <Route path="account" element={<AccountSettings />} />
@@ -38,6 +41,7 @@ function App() {
           <Toaster position="top-right" />
 
         </BrowserRouter>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   )

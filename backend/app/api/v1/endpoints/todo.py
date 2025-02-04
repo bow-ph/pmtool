@@ -355,7 +355,9 @@ async def update_todo_item(
             detail=f"An unexpected error occurred: {str(e)}"
         )
 
-@router.post("/transfer", response_model=dict)
+
+@router.post("/tasks/transfer", response_model=dict)
+
 async def transfer_tasks(
     task_ids: List[int],
     current_user: User = Depends(get_current_user),
@@ -414,7 +416,9 @@ async def transfer_tasks(
             detail=f"Failed to transfer tasks: {str(e)}"
         )
 
-@router.get("/sync", response_model=dict)
+
+@router.get("/sync-status", response_model=dict)
+
 async def get_sync_status(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
